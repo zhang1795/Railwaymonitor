@@ -1,0 +1,498 @@
+@use 'sass:color';
+@use './variables.scss' as *;
+
+// 重置样式
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+// 全局滚动条样式
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--el-bg-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--el-border-color-darker);
+  border-radius: 4px;
+  
+  &:hover {
+    background: var(--el-border-color-dark);
+  }
+}
+
+// Element Plus 主题覆盖
+:root {
+  --el-color-primary: #{$primary-color};
+  --el-color-success: #{$success-color};
+  --el-color-warning: #{$warning-color};
+  --el-color-danger: #{$danger-color};
+  --el-color-info: #{$info-color};
+  
+  --el-text-color-primary: #{$text-primary};
+  --el-text-color-regular: #{$text-regular};
+  --el-text-color-secondary: #{$text-secondary};
+  --el-text-color-placeholder: #{$text-placeholder};
+  
+  --el-border-color: #{$border-color};
+  --el-border-radius-base: #{$border-radius-base};
+}
+
+// 暗黑主题变量
+html.dark {
+  // 基础颜色
+  --el-bg-color: #141414;
+  --el-bg-color-overlay: #1d1e1f;
+  --el-bg-color-page: #0a0a0a;  // 页面背景色
+  --el-text-color-primary: #ffffff;
+  --el-text-color-regular: #e5eaf3;
+  --el-text-color-secondary: #a3a6ad;
+  --el-text-color-placeholder: #8d9095;
+  --el-border-color: #363637;
+  --el-border-color-light: #363637;
+  --el-border-color-lighter: #363637;
+  --el-fill-color: #1d1e1f;
+  --el-fill-color-light: #262727;
+  --el-fill-color-lighter: #1d1e1f;
+  --el-mask-color: rgba(0, 0, 0, 0.8);
+
+  // 页面背景
+  .page-container,
+  .el-main {
+    background-color: var(--el-bg-color-page);
+    color: var(--el-text-color-primary);
+  }
+
+  // 头部导航栏
+  .el-container {
+    .el-header {
+      background-color: var(--el-bg-color);
+      border-bottom: 1px solid var(--el-border-color);
+      color: var(--el-text-color-primary);
+
+      .collapse-btn {
+        color: var(--el-text-color-primary);
+
+        &:hover {
+          color: var(--el-color-primary);
+        }
+      }
+
+      .el-breadcrumb__item {
+        .el-breadcrumb__inner {
+          color: var(--el-text-color-regular);
+
+          &.is-link:hover {
+            color: var(--el-color-primary);
+          }
+        }
+
+        &:last-child .el-breadcrumb__inner {
+          color: var(--el-text-color-primary);
+        }
+      }
+
+      .action-icon {
+        color: var(--el-text-color-primary);
+
+        &:hover {
+          color: var(--el-color-primary);
+        }
+      }
+
+      .username {
+        color: var(--el-text-color-primary);
+      }
+    }
+  }
+
+  // 侧边栏
+  .sidebar-container {
+    background: var(--el-bg-color);
+    border-right: 1px solid var(--el-border-color);
+
+    .sidebar-logo {
+      background: color.adjust(#141414, $lightness: -3%);
+      border-bottom: 1px solid var(--el-border-color);
+    }
+
+    .el-menu {
+      border-right: none;
+      background: transparent;
+
+      .el-menu-item,
+      .el-sub-menu__title {
+        color: var(--el-text-color-regular) !important;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.05) !important;
+        }
+
+        &.is-active {
+          color: #fff !important;
+          background: var(--el-color-primary) !important;
+        }
+      }
+    }
+  }
+
+  // 卡片样式
+  .el-card {
+    background: var(--el-bg-color);
+    border-color: var(--el-border-color);
+    color: var(--el-text-color-primary);
+
+    .el-card__header {
+      border-bottom-color: var(--el-border-color);
+    }
+  }
+
+  // 表格样式
+  .el-table {
+    background-color: var(--el-bg-color);
+    color: var(--el-text-color-regular);
+
+    th.el-table__cell {
+      background-color: var(--el-bg-color);
+      color: var(--el-text-color-primary);
+      border-bottom: 1px solid var(--el-border-color);
+    }
+
+    td.el-table__cell {
+      border-bottom: 1px solid var(--el-border-color);
+    }
+
+    tr {
+      background-color: var(--el-bg-color);
+
+      &:hover > td.el-table__cell {
+        background-color: var(--el-fill-color-light);
+      }
+    }
+  }
+
+  // 表单样式
+  .el-form {
+    .el-form-item__label {
+      color: var(--el-text-color-regular);
+    }
+
+    .el-input__wrapper {
+      background-color: var(--el-fill-color-light);
+    }
+  }
+
+  // 对话框样式
+  .el-dialog {
+    background: var(--el-bg-color);
+
+    .el-dialog__header {
+      border-bottom: 1px solid var(--el-border-color);
+    }
+  }
+
+  // 抽屉样式
+  .el-drawer {
+    background: var(--el-bg-color);
+
+    .el-drawer__header {
+      color: var(--el-text-color-primary);
+      border-bottom: 1px solid var(--el-border-color);
+    }
+  }
+
+  // 下拉菜单样式
+  .el-dropdown-menu {
+    background-color: var(--el-bg-color);
+    border: 1px solid var(--el-border-color);
+
+    .el-dropdown-menu__item {
+      color: var(--el-text-color-regular);
+
+      &:hover {
+        background-color: var(--el-fill-color-light);
+      }
+    }
+  }
+}
+
+// 页面通用样式
+.page-container {
+  padding: $spacing-large;
+  background: $bg-primary;
+  min-height: calc(100vh - 60px);
+}
+
+// 卡片样式
+.el-card {
+  border: none;
+  border-radius: $border-radius-medium;
+  box-shadow: $box-shadow-light;
+  transition: $transition-base;
+  
+  &:hover {
+    box-shadow: $box-shadow-hover;
+  }
+  
+  .el-card__header {
+    border-bottom: 1px solid $border-light;
+    padding: $spacing-base $spacing-large;
+  }
+}
+
+// 表格样式
+.el-table {
+  border-radius: $border-radius-base;
+  
+  th.el-table__cell {
+    background: $bg-primary;
+    font-weight: 600;
+  }
+  
+  .el-table__row {
+    transition: $transition-base;
+    
+    &:hover > td.el-table__cell {
+      background: $bg-hover;
+    }
+  }
+}
+
+// 表单样式
+.el-form {
+  .el-form-item__label {
+    font-weight: 500;
+  }
+  
+  .el-input__wrapper {
+    box-shadow: 0 0 0 1px $border-color;
+    
+    &:hover {
+      box-shadow: 0 0 0 1px var(--el-color-primary);
+    }
+  }
+}
+
+// 按钮样式
+.el-button {
+  font-weight: 500;
+  
+  &--primary {
+    box-shadow: 0 2px 6px rgba($primary-color, 0.2);
+    
+    &:hover {
+      box-shadow: 0 4px 12px rgba($primary-color, 0.3);
+      transform: translateY(-1px);
+    }
+  }
+}
+
+// 标签样式
+.el-tag {
+  border-radius: 4px;
+  
+  &--success {
+    background: rgba($success-color, 0.1);
+    border-color: rgba($success-color, 0.2);
+    color: $success-color;
+  }
+  
+  &--warning {
+    background: rgba($warning-color, 0.1);
+    border-color: rgba($warning-color, 0.2);
+    color: $warning-color;
+  }
+  
+  &--danger {
+    background: rgba($danger-color, 0.1);
+    border-color: rgba($danger-color, 0.2);
+    color: $danger-color;
+  }
+}
+
+// 动画类
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+// 工具类
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// 响应式布局
+@media (max-width: $screen-xs) {
+  .page-container {
+    padding: $spacing-base;
+  }
+  
+  .el-card__header {
+    padding: $spacing-base;
+  }
+}
+
+// 侧边栏样式优化
+.el-menu {
+  border-right: none !important;
+  
+  .el-menu-item,
+  .el-sub-menu__title {
+    color: rgba(255, 255, 255, 0.8) !important;
+    
+    &:hover {
+      color: #fff !important;
+      background: rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    &.is-active {
+      color: #fff !important;
+      background: $primary-color !important;
+      
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: #fff;
+      }
+    }
+    
+    i {
+      color: inherit !important;
+    }
+  }
+}
+
+.sidebar-container {
+  background: #001529;
+  
+  .sidebar-logo {
+    height: 64px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    background: color.adjust(#001529, $lightness: -3%);
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    
+    img.logo-img {
+      display: block;
+      width: 32px !important;
+      height: 32px !important;
+      min-width: 32px !important;
+      min-height: 32px !important;
+      margin-right: 8px;
+      vertical-align: middle;
+      transition: $transition-base;
+      object-fit: contain;
+      
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+    
+    span.logo-text {
+      display: block;
+      flex: 1;
+      min-width: 120px;
+      max-width: 160px;
+      padding-right: 4px;
+      color: #fff;
+      font-size: 16px !important;
+      font-weight: 600 !important;
+      white-space: nowrap;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      letter-spacing: 0.5px;
+      background: linear-gradient(45deg, #fff 30%, rgba(255, 255, 255, 0.8));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+  
+  .el-menu {
+    background: transparent !important;
+  }
+  
+  .el-sub-menu .el-menu-item {
+    background: color.adjust(#001529, $lightness: -3%) !important;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    &.is-active {
+      background: $primary-color !important;
+    }
+  }
+} 
+
+.amap-info-close {
+    margin-top: 12px;
+    font-size: 20px;
+}
+
+.custom-content-marker {
+    position: relative;
+    width: 35px;
+    height: 45px;
+}
+
+.custom-content-marker img {
+    width: 100%;
+    height: 100%;
+}
+
+.custom-content-marker .close-btn {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    width: 15px;
+    height: 15px;
+    font-size: 12px;
+    background: #ccc;
+    border-radius: 50%;
+    color: #fff;
+    text-align: center;
+    line-height: 15px;
+    box-shadow: -1px 1px 1px rgba(10, 10, 10, .2);
+}
+
+.custom-content-marker .close-btn:hover{
+    background: red;
+}

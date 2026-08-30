@@ -1,0 +1,5 @@
+# Classes
+nc: 13  # number of classes
+names: ['Railway collision avoidance facilities', 'balloon', 'cow', 'flood', 'huapo', 'illegal construction', 'kite', 'luoshi', 'nest', 'placard', 'pothole', 'trash', 'worker']
+  # class names
+

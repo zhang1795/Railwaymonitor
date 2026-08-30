@@ -1,0 +1,56 @@
+# IDE
+.idea/
+.vscode/
+__pycache__/
+*.iml
+*.iws
+*.ipr
+
+# Compiled files
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Build directories
+target/
+build/
+dist/
+out/
+
+# Logs
+*.log
+logs/
+
+# System files
+.DS_Store
+Thumbs.db 
+
+异常检测-2Plus/
+测试包/
+web-file/file_store/
+
+# Local runtime and deployment state
+runtime/
+deploy/.env
+
+# Large migrated runtime assets (kept locally, not committed)
+RailwayDetector/*.mp4
+RailwayDetector/*.avi
+RailwayDetector/*.pt
+RailwayDetector/models/*.pt
+RailwayDetector/yolov5/*.pt
+RailwayDetector/yolov5/models/*.pt
+RailwayDetector/**/*.pt
+RailwayDetector/**/*.onnx
+RailwayDetector/**/*.engine
+RailwayDetector/**/*.mp4
+RailwayDetector/**/*.avi
+RailwayDetector/**/runs/
+RailwayDetector/**/weights/
+
+# TypeScript incremental build metadata
+*.tsbuildinfo

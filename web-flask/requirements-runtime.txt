@@ -1,0 +1,6 @@
+# 视频流/WebSocket 网关的最小依赖；YOLO 算法依赖仍由 requirements.txt 管理。
+Flask==3.1.0
+flask-cors==5.0.1
+flask-sock==0.7.0
+numpy==2.1.1
+opencv-python-headless==4.11.0.86

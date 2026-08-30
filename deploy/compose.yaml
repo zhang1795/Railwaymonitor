@@ -1,0 +1,36 @@
+name: railway-monitoring
+
+services:
+  emqx:
+    image: emqx/emqx:5.8.8
+    container_name: railway-emqx
+    hostname: node1.emqx.local
+    restart: unless-stopped
+    environment:
+      EMQX_NODE_NAME: emqx@node1.emqx.local
+    ports:
+      - "1883:1883"
+      - "8083:8083"
+      - "127.0.0.1:18083:18083"
+    volumes:
+      - railway_emqx_data:/opt/emqx/data
+      - railway_emqx_log:/opt/emqx/log
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+
+  mediamtx:
+    image: bluenviron/mediamtx:1.18.2
+    container_name: railway-mediamtx
+    restart: unless-stopped
+    ports:
+      - "8554:8554"
+      - "8888:8888"
+      - "8889:8889"
+      - "8189:8189/udp"
+
+volumes:
+  railway_emqx_data:
+  railway_emqx_log:
