@@ -1,0 +1,21 @@
+{
+  "algorithmTests": 105,
+  "gatewayTests": 5,
+  "deploymentTests": 13,
+  "backendH2Tests": 102,
+  "backendMysqlTests": 102,
+  "tlsMqttTests": 1,
+  "frontendInteractionTests": 62,
+  "frontendTypecheck": true,
+  "productionBuild": true,
+  "diffWhitespaceCheck": true,
+  "isolatedRuntimeMode": "FULL",
+  "realBrowser": true,
+  "exactVideoPts": true,
+  "sampleVideoFrames": 46,
+  "sampleDurationMs": 30265,
+  "artifactHashesMatchDeployment": true,
+  "testServicesCleanup": "complete",
+  "startingFrameState": "WAITING",
+  "businessServicesAfterCleanup": "healthy"
+}

@@ -13,7 +13,7 @@
       <div v-if="hasConnectionError && !isLoading" class="error-overlay">
         <el-icon class="error-icon"><CircleClose /></el-icon>
         <span class="error-text">{{ connectionErrorMessage }}</span>
-        <el-button size="small" type="primary" @click="retryConnection">
+        <el-button size="small" type="primary" @click.stop="retryConnection">
           重试连接
         </el-button>
       </div>
@@ -22,322 +22,105 @@
     <!-- 摄像头信息 -->
     <div class="camera-info">
       <span class="name">{{ camera.name }}</span>
-      <span class="status" :class="camera.status === 1 ? 'online' : 'offline'">
-        {{ camera.status === 1 ? '在线' : '离线' }}
+      <span class="status" :class="fresh ? 'online' : 'offline'">
+        {{ fresh ? '画面实时' : '画面未确认' }} · 最后画面：{{ lastFrameLabel }}
       </span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import type { Camera } from '@/types/camera'
 import wsClient from '@/utils/websocket'
 import type { WebSocketMessage } from '@/utils/websocket'
 
-const props = defineProps<{
-  camera: Camera
-  isActive: boolean
-  width?: number
-  height?: number
-}>()
-
-const emit = defineEmits<{
-  (e: 'click', camera: Camera): void
-}>()
-
-const router = useRouter()
-const isLoading = ref(false)
-const hasConnectionError = ref(false)
-const connectionErrorMessage = ref('连接失败，请重试')
-const connectionTimeout = ref<number | null>(null)
-
-// 组件状态
-const canvas = ref<HTMLCanvasElement | null>(null)
-const ctx = ref<CanvasRenderingContext2D | null>(null)
-const videoContainer = ref<HTMLDivElement | null>(null)
-const frameCount = ref(0)  // 添加帧计数器
-
-// 默认尺寸
+const props = defineProps<{ camera:Camera; isActive:boolean; width?:number; height?:number }>()
+const emit = defineEmits<{ (e:'click',camera:Camera):void }>()
+const canvas = ref<HTMLCanvasElement|null>(null)
+const ctx = ref<CanvasRenderingContext2D|null>(null)
+const videoContainer = ref<HTMLDivElement|null>(null)
 const width = props.width || 640
 const height = props.height || 480
+const isLoading = ref(true)
+const hasConnectionError = ref(false)
+const connectionErrorMessage = ref('正在等待预览连接')
+const lastFrameAt = ref(0)
+const now = ref(Date.now())
+const fresh = computed(() => props.isActive && lastFrameAt.value > 0 && now.value-lastFrameAt.value <= 5000 && !hasConnectionError.value && !isLoading.value)
+const lastFrameLabel = computed(() => lastFrameAt.value ? new Date(lastFrameAt.value).toLocaleTimeString('zh-CN',{hour12:false}) : '尚未收到画面')
+let timer:ReturnType<typeof setInterval>|undefined
+let startedAt = Date.now()
+let disposed = false
+let imageEpoch = 0
+let received = 0
+let drawn = 0
+let sourceCorrupt=false
 
-// 重试连接
-const retryConnection = () => {
-  if (!props.camera || !wsClient.isConnected()) return
-  
-  hasConnectionError.value = false
-  isLoading.value = true
-  
-  // 先清除之前的连接
-  wsClient.send({
-    type: 'stop_stream',
-    data: {
-      cameraId: props.camera.id
-    }
-  })
-  
-  // 清理现有超时定时器
-  if (connectionTimeout.value !== null) {
-    clearTimeout(connectionTimeout.value)
-    connectionTimeout.value = null
-  }
-  
-  // 设置新的连接超时
-  connectionTimeout.value = window.setTimeout(() => {
-    if (isLoading.value) {
-      isLoading.value = false
-      hasConnectionError.value = true
-      connectionErrorMessage.value = '连接超时，请重试'
-    }
-  }, 15000) // 15秒超时
-  
-  // 重新发起连接
-  setTimeout(() => {
-    wsClient.send({
-      type: 'start_stream',
-      data: {
-        cameraId: props.camera.id,
-        rtspUrl: props.camera.rtspUrl
-      }
-    })
-  }, 500)
-}
-
-// 清除画面和检测框
 const clearDisplay = () => {
-  console.log('清除画面:', props.camera.id)
-  // 清除画布
-  if (ctx.value) {
-    ctx.value.fillStyle = '#000'  // 设置为黑色背景
-    ctx.value.fillRect(0, 0, width, height)  // 填充整个画布
-  }
-  // 重置帧计数
-  frameCount.value = 0
+  imageEpoch++
+  if(ctx.value) { ctx.value.fillStyle='#000';ctx.value.fillRect(0,0,width,height) }
 }
-
-// 处理点击事件
-const handleClick = () => {
-  emit('click', props.camera)
-}
-
-// 处理WebSocket消息
-const handleMessage = (message: WebSocketMessage) => {
-  if (message.data.cameraId !== props.camera.id) return
-
-  // 处理视频帧准备就绪消息
-  if (message.type === 'stream_ready') {
-    console.log('视频流准备就绪:', message.data)
-    isLoading.value = false
-    hasConnectionError.value = false
-    
-    // 清除连接超时定时器
-    if (connectionTimeout.value !== null) {
-      clearTimeout(connectionTimeout.value)
-      connectionTimeout.value = null
-    }
-    return
-  }
-
-  // 处理视频帧
-  if (message.type === 'video_frame') {  
-    // 显示视频帧（带检测框的图像）
-    if (message.data.frame) {
-      const image = new Image()
-      image.onload = () => {
-        if (ctx.value && canvas.value) {
-          // 获取Canvas和图像尺寸
-          const canvasWidth = canvas.value.width
-          const canvasHeight = canvas.value.height
-          
-          // 清除画布
-          ctx.value.clearRect(0, 0, canvasWidth, canvasHeight)
-          
-          // 计算保持宽高比的缩放尺寸和位置
-          const imgWidth = image.width
-          const imgHeight = image.height
-          const canvasRatio = canvasWidth / canvasHeight
-          const imgRatio = imgWidth / imgHeight
-          
-          let drawWidth, drawHeight, x, y
-          
-          if (canvasRatio > imgRatio) {
-            // Canvas更宽，高度限制
-            drawHeight = canvasHeight
-            drawWidth = imgRatio * drawHeight
-            x = (canvasWidth - drawWidth) / 2
-            y = 0
-          } else {
-            // Canvas更高，宽度限制
-            drawWidth = canvasWidth
-            drawHeight = drawWidth / imgRatio
-            x = 0
-            y = (canvasHeight - drawHeight) / 2
-          }
-          
-          // 绘制图像
-          ctx.value.drawImage(image, x, y, drawWidth, drawHeight)
-          
-          // 更新帧计数
-          frameCount.value++
-          if (frameCount.value % 30 === 0) {  // 每30帧打印一次日志
-            console.log('已接收', frameCount.value, '帧')
-          }
-        }
-      }
-      image.onerror = (error) => {
-        console.error('图片加载失败:', error)
-      }
-      image.src = message.data.frame
-    }
-    return
-  }
-
-  // 处理摄像头状态更新
-  if (message.type === 'camera_status') {
-    console.log('摄像头状态更新:', message.data)
-    // 如果摄像头离线，清除画面
-    if (message.data.status === 0) {
-      clearDisplay()
-      hasConnectionError.value = true
-      isLoading.value = false
-      connectionErrorMessage.value = '摄像头不在线，请检查设备'
-    }
-    return
-  }
-
-  // 处理停止流消息
-  if (message.type === 'stream_stopped') {
-    console.log('收到停止流消息')
-    clearDisplay()
-    return
-  }
-}
-
-// 初始化视频播放器
-const initPlayer = () => {
-  if (!canvas.value) return
-  
-  // 获取Canvas 2D上下文
-  ctx.value = canvas.value.getContext('2d')
-  
-  // 清除画布
-  if (ctx.value) {
-    ctx.value.fillStyle = '#000'  // 设置为黑色背景
-    ctx.value.fillRect(0, 0, width, height)  // 填充整个画布
-  }
-  
-  // 添加WebSocket消息处理器
-  wsClient.addMessageHandler(handleMessage)
-  
-  // 如果摄像头在线并且WebSocket连接有效，则开始获取视频流
-  if (props.camera && props.camera.status === 1 && props.isActive) {
-    startStream()
-  }
-}
-
-// 开始视频流
-const startStream = () => {
-  if (!props.camera || !props.isActive) return
-  
-  isLoading.value = true
-  hasConnectionError.value = false
-  
-  // 清理现有的超时定时器
-  if (connectionTimeout.value !== null) {
-    clearTimeout(connectionTimeout.value)
-    connectionTimeout.value = null
-  }
-  
-  // 设置连接超时
-  connectionTimeout.value = window.setTimeout(() => {
-    if (isLoading.value) {
-      isLoading.value = false
-      hasConnectionError.value = true
-      connectionErrorMessage.value = '连接超时，请重试'
-    }
-  }, 15000) // 15秒超时
-  
-  console.log('开始获取视频流:', props.camera.id)
-  wsClient.send({
-    type: 'start_stream',
-    data: {
-      cameraId: props.camera.id,
-      rtspUrl: props.camera.rtspUrl
-    }
-  })
-}
-
-// 停止视频流
-const stopStream = () => {
-  if (!props.camera) return
-  
-  // 清除超时定时器
-  if (connectionTimeout.value !== null) {
-    clearTimeout(connectionTimeout.value)
-    connectionTimeout.value = null
-  }
-  
-  console.log('停止视频流:', props.camera.id)
-  wsClient.send({
-    type: 'stop_stream',
-    data: {
-      cameraId: props.camera.id
-    }
-  })
-  
-  // 清除画面
+const fail = (message:string) => {
+  isLoading.value=false;hasConnectionError.value=true;connectionErrorMessage.value=message
   clearDisplay()
-  isLoading.value = false
+}
+const waitForFrames = () => {
+  sourceCorrupt=false
+  startedAt=Date.now();isLoading.value=true;hasConnectionError.value=false
+  clearDisplay()
+}
+const retryConnection = () => {
+  if(disposed)return
+  waitForFrames()
+  wsClient.retryStream(props.camera.id)
+}
+const handleClick = () => emit('click',props.camera)
+const handleMessage = (message:WebSocketMessage) => {
+  if(disposed || message.data.cameraId!==props.camera.id)return
+  if(message.type==='source_quality' && message.data.state==='CORRUPT') {sourceCorrupt=true;fail('源画面解码损坏，已停止显示，请检查源流后重试');return}
+  if(message.type==='camera_status' && message.data.status!==1) {
+    fail('预览不可用，请检查设备或重试');return
+  }
+  if(message.type==='stream_stopped') {
+    if(!sourceCorrupt)fail('预览已停止，画面已过期');return
+  }
+  // stream_ready alone is not proof that a usable JPEG has been displayed.
+  if(message.type!=='video_frame' || !message.data.frame)return
+  const image=new Image(), epoch=imageEpoch, sequence=++received
+  image.onload=()=>{
+    if(disposed || epoch!==imageEpoch || sequence<=drawn || !ctx.value || !canvas.value || !wsClient.isConnected())return
+    const w=canvas.value.width,h=canvas.value.height
+    const scale=Math.min(w/image.width,h/image.height)
+    ctx.value.clearRect(0,0,w,h)
+    ctx.value.drawImage(image,(w-image.width*scale)/2,(h-image.height*scale)/2,image.width*scale,image.height*scale)
+    drawn=sequence;lastFrameAt.value=Date.now();now.value=Date.now()
+    isLoading.value=false;hasConnectionError.value=false
+  }
+  image.onerror=()=>{if(!disposed && epoch===imageEpoch)fail('画面解码失败，请重试')}
+  image.src=message.data.frame
 }
 
-// 监听组件挂载
-onMounted(() => {
-  initPlayer()
+watch(()=>props.isActive,connected=>{
+  if(connected)waitForFrames()
+  else fail('预览连接已断开，画面已过期')
 })
-
-// 监听组件卸载
-onBeforeUnmount(() => {
-  // 停止视频流
-  stopStream()
-  
-  // 移除WebSocket消息处理器
+onMounted(()=>{
+  if(canvas.value)ctx.value=canvas.value.getContext('2d')
+  clearDisplay()
+  wsClient.addMessageHandler(handleMessage)
+  wsClient.send({type:'start_stream',data:{cameraId:props.camera.id}})
+  timer=setInterval(()=>{
+    now.value=Date.now()
+    if(lastFrameAt.value && now.value-lastFrameAt.value>5000 && !hasConnectionError.value && !isLoading.value)fail('超过5秒没有新画面，画面已过期')
+    if(isLoading.value && now.value-startedAt>15000)fail('等待新画面超时，请重试连接')
+  },1000)
+})
+onBeforeUnmount(()=>{
+  disposed=true;imageEpoch++
+  if(timer)clearInterval(timer)
   wsClient.removeMessageHandler(handleMessage)
-  
-  // 清除超时定时器
-  if (connectionTimeout.value !== null) {
-    clearTimeout(connectionTimeout.value)
-    connectionTimeout.value = null
-  }
-})
-
-// 监听props变化
-watch(() => props.isActive, (newValue) => {
-  if (newValue) {
-    // WebSocket已连接并且摄像头在线
-    if (wsClient.isConnected() && props.camera.status === 1) {
-      startStream()
-    }
-  } else {
-    // 停止视频流
-    stopStream()
-  }
-})
-
-// 监听摄像头状态变化
-watch(() => props.camera.status, (newValue) => {
-  if (newValue === 1) {
-    // 摄像头在线
-    if (props.isActive && wsClient.isConnected()) {
-      startStream()
-    }
-  } else {
-    // 摄像头离线，停止视频流
-    stopStream()
-    hasConnectionError.value = true
-    connectionErrorMessage.value = '摄像头不在线，请检查设备'
-  }
+  wsClient.send({type:'stop_stream',data:{cameraId:props.camera.id}})
 })
 </script>
 
@@ -569,4 +352,4 @@ watch(() => props.camera.status, (newValue) => {
     transform: rotate(360deg);
   }
 }
-</style> 
+</style>

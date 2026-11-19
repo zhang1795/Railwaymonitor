@@ -1,0 +1,31 @@
+{
+  "date": "2026-11-11",
+  "scope": "P1 risk lifecycle, bounded fragment association, persistent reminders, screenshot evidence",
+  "tests": {
+    "python": 73,
+    "backendH2": 77,
+    "backendRealMysql": 77,
+    "tlsMqttFaultSuite": 1,
+    "frontendScripts": 31,
+    "deploymentTools": 6
+  },
+  "frontendTypecheck": true,
+  "frontendBuild": true,
+  "real60SecondsSyntheticMqtt": true,
+  "realYoloRtspScreenshotsSeparately": true,
+  "finalHardeningUnitAndBuildPassed": true,
+  "browserDomOrVisualAcceptance": false,
+  "isolatedServicesCleaned": true,
+  "businessDeploymentApplied": true,
+  "remaining": [
+    "field ROI/threshold and model calibration",
+    "occlusion identity precision",
+    "multi-camera capacity and soak",
+    "complete video retention/archive",
+    "external notification delivery",
+    "preexisting RTSP decode warnings and sample classification require field review"
+  ],
+  "userApprovedBusinessDeployment": true,
+  "postUpgradeReadOnlyChecksPassed": true,
+  "businessScreenshotVerified": true
+}

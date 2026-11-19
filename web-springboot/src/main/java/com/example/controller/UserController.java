@@ -10,6 +10,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
+import cn.hutool.core.bean.BeanUtil;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,6 +41,7 @@ public class UserController {
      */
     @Operation(summary = "用户注册", description = "用户注册接口")
     @PostMapping("/register")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> register(@RequestBody @Valid UserRegisterDTO dto) {
         userService.register(dto);
         return Result.success();
@@ -68,8 +72,9 @@ public class UserController {
      */
     @Operation(summary = "分页查询用户列表", description = "分页查询用户列表接口")
     @GetMapping("/page")
-    public Result<IPage<User>> getUserPage(UserQueryDTO dto) {
-        return Result.success(userService.getUserPage(dto));
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<IPage<UserLoginVO>> getUserPage(UserQueryDTO dto) {
+        return Result.success(userService.getUserPage(dto).convert(u -> BeanUtil.copyProperties(u, UserLoginVO.class)));
     }
 
     /**
@@ -86,8 +91,9 @@ public class UserController {
      */
     @Operation(summary = "获取用户详情", description = "根据用户ID获取用户详情")
     @GetMapping("/{id}")
-    public Result<User> getUserInfo(@PathVariable Long id) {
-        return Result.success(userService.getById(id));
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<UserLoginVO> getUserInfo(@PathVariable Long id) {
+        return Result.success(BeanUtil.copyProperties(userService.getById(id), UserLoginVO.class));
     }
 
     /**
@@ -95,8 +101,9 @@ public class UserController {
      */
     @Operation(summary = "删除用户", description = "删除用户接口")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> deleteUser(@PathVariable Long id) {
-        userService.removeById(id);
+        userService.deleteUser(id);
         return Result.success();
     }
 
@@ -113,10 +120,10 @@ public class UserController {
     /**
      * 重置密码
      */
-    @Operation(summary = "重置密码", description = "管理员重置用户密码为默认密码")
+    @Operation(summary = "重置密码", description = "管理员生成一次性显示的临时口令，用户必须修改")
     @PutMapping("/{id}/reset-password")
-    public Result<Void> resetPassword(@PathVariable("id") Long id) {
-        userService.resetPassword(id);
-        return Result.success();
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<Map<String,String>> resetPassword(@PathVariable("id") Long id) {
+        return Result.success(Map.of("temporaryPassword", userService.resetPassword(id)));
     }
 } 

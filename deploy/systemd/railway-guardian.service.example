@@ -1,0 +1,18 @@
+[Unit]
+Description=Railway monitoring application guardian
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Replace both placeholders. Run deploy/start.sh once to prepare private manifests.
+User=REPLACE_USER
+WorkingDirectory=REPLACE_PROJECT_ROOT
+ExecStart=/usr/bin/python3 REPLACE_PROJECT_ROOT/deploy/guardian.py --root REPLACE_PROJECT_ROOT
+Restart=on-failure
+RestartSec=5
+UMask=0077
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -7,9 +7,10 @@
           <template #header>
             <div class="card-header">
               <span>异常事件统计</span>
-              <el-button type="primary" @click="refreshData">刷新数据</el-button>
+              <el-button type="primary" :loading="loading" @click="refreshData">刷新数据</el-button>
             </div>
           </template>
+          <el-alert title="以下按事件记录统计，包含待核验观察、风险事件和历史记录；持续提醒属于同一事件，数据不代表通知次数或已确认事故数。" type="info" :closable="false" />
           <el-row v-loading="loading" :gutter="20">
             <el-col :span="8">
               <div ref="levelChart" class="chart"></div>
@@ -37,6 +38,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
 import type { EChartsType } from 'echarts'
 import { getAbnormalEventStatistics } from '@/api/statistics'
+import type { AbnormalEventStatisticsVO } from '@/types/statistics'
 import { ElMessage } from 'element-plus'
 
 // 图表实例
@@ -52,11 +54,12 @@ let typeChartInstance: EChartsType | null = null
 
 // 加载状态
 const loading = ref(false)
+let disposed = false
 
 // 初始化异常等级分布图表
 const initLevelChart = (data: any) => {
   if (!levelChart.value) return
-  levelChartInstance = echarts.init(levelChart.value)
+  levelChartInstance ||= echarts.init(levelChart.value)
   const option = {
     title: {
       text: '异常等级分布',
@@ -141,7 +144,7 @@ const initLevelChart = (data: any) => {
 // 初始化异常位置分布图表
 const initLocationChart = (data: any) => {
   if (!locationChart.value) return
-  locationChartInstance = echarts.init(locationChart.value)
+  locationChartInstance ||= echarts.init(locationChart.value)
   const option = {
     title: {
       text: '异常位置分布',
@@ -211,7 +214,7 @@ const initLocationChart = (data: any) => {
 // 初始化异常类型分布
 const initTypeChart = (data: any) => {
   if (!typeChart.value) return
-  typeChartInstance = echarts.init(typeChart.value)
+  typeChartInstance ||= echarts.init(typeChart.value)
   
   // 预定义颜色数组
   const colors = [
@@ -274,10 +277,27 @@ const initTypeChart = (data: any) => {
 }
 
 // 初始化异常趋势图表
-const initTrendChart = (data: any) => {
+const initTrendChart = (data: AbnormalEventStatisticsVO) => {
   if (!trendChart.value) return
-  trendChartInstance = echarts.init(trendChart.value)
+  trendChartInstance ||= echarts.init(trendChart.value)
+  // The API's grouped dates have no ordering guarantee. Keep each count bound
+  // to its date, and treat calendar dates independently of browser timezone.
+  const days = [...(data?.trendData || [])].sort((a, b) => a.date.localeCompare(b.date))
+  const timeline: [number, number][] = []
+  const day = 24 * 60 * 60 * 1000
+  for (const item of days) {
+    const time = Date.parse(`${item.date}T00:00:00Z`)
+    const previous = timeline[timeline.length - 1]?.[0]
+    if (previous !== undefined && time - previous > day) {
+      // Missing calendar days have zero stored events. Two boundary points
+      // keep arbitrarily long empty periods flat without allocating every day.
+      timeline.push([previous + day, 0])
+      if (time - previous > 2 * day) timeline.push([time - day, 0])
+    }
+    timeline.push([time, item.count])
+  }
   const option = {
+    useUTC: true,
     title: {
       text: '异常趋势分析',
       left: 'center'
@@ -295,22 +315,31 @@ const initTrendChart = (data: any) => {
     grid: {
       left: '3%',
       right: '4%',
-      bottom: '3%',
+      bottom: 65,
       containLabel: true
     },
+    dataZoom: [
+      { type: 'inside', filterMode: 'none' },
+      { type: 'slider', filterMode: 'none', bottom: 5, height: 20 }
+    ],
     xAxis: {
-      type: 'category',
-      data: data?.trendData?.map((item: any) => item.date) || []
+      type: 'time',
+      minInterval: day,
+      axisLabel: { formatter: '{yyyy}-{MM}-{dd}', hideOverlap: true },
+      axisPointer: { label: { formatter: (params: { value: string | number }) => new Date(Number(params.value)).toISOString().slice(0, 10) } }
     },
     yAxis: {
-      type: 'value'
+      type: 'value',
+      min: 0,
+      minInterval: 1
     },
     series: [
       {
         name: '异常事件数',
         type: 'line',
-        data: data?.trendData?.map((item: any) => item.count) || [],
-        smooth: true,
+        data: timeline,
+        smooth: false,
+        showSymbol: false,
         itemStyle: {
           color: '#F56C6C'
         },
@@ -334,10 +363,11 @@ const initTrendChart = (data: any) => {
 
 // 获取数据并初始化图表
 const initCharts = async () => {
+  if (loading.value || disposed) return
   try {
     loading.value = true
     const data = await getAbnormalEventStatistics()
-    console.log('异常事件统计数据:', data)
+    if (disposed) return
     initLevelChart(data)
     initLocationChart(data)
     initTypeChart(data)
@@ -369,6 +399,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  disposed = true
   window.removeEventListener('resize', handleResize)
   levelChartInstance?.dispose()
   locationChartInstance?.dispose()
@@ -400,4 +431,4 @@ onUnmounted(() => {
 .mt-4 {
   margin-top: 20px;
 }
-</style> 
+</style>

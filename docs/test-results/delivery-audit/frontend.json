@@ -1,0 +1,23 @@
+{
+  "category_score_mix": {
+    "stored_type": "工人",
+    "stored_level": 2,
+    "score_text": "95.0% from 牛"
+  },
+  "failed_http": {
+    "marked_saved_before_success": true,
+    "request_count_after_same_target_redelivery": 1
+  },
+  "continuous_messages_without_quiet_period": {
+    "input": 300,
+    "requests_before_timer_fires": 0,
+    "pending_timer_count": 1
+  },
+  "independent_pages_same_event": {
+    "create_requests": 2
+  },
+  "invalid_null_score": {
+    "create_requests": 1
+  },
+  "stored_event_time_is_browser_now": true
+}

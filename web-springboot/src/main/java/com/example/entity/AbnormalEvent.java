@@ -11,6 +11,15 @@ import java.time.LocalDateTime;
 @Data
 @TableName("abnormal_event")
 public class AbnormalEvent {
+    private String sourceKey;
+    private LocalDateTime firstSeen;
+    private LocalDateTime lastSeen;
+    private String detectionState;
+    private String detectedType;
+    private Double confidence;
+    private Boolean manualOverride;
+    @TableLogic
+    private Integer deleted;
     /**
      * 事件ID
      */

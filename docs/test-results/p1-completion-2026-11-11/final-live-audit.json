@@ -1,0 +1,12 @@
+{
+  "coreProcessPidsUnchanged": true,
+  "minutesSinceCoreRollout": 141.5,
+  "guardianHealthy": true,
+  "recentInferenceAgeSeconds": 2.93,
+  "rejectedSinceRollout": 0,
+  "eventPendingAtSample": 0,
+  "recordingPendingAtSample": 0,
+  "recordingFailedAtSample": 0,
+  "latestClipFullDecodePassed": true,
+  "mediaQueueSize": 8192
+}

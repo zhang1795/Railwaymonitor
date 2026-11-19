@@ -12,6 +12,9 @@ import java.util.Map;
 @Data
 @Schema(description = "设备状态统计数据")
 public class DeviceStatusStatisticsVO {
+    private String statusSource="CAMERA_REGISTRY";
+    private String trendSource="DETECTION_CHAIN_SAMPLES";
+    private Integer unknownCount;
 
     @Schema(description = "设备总数")
     private Integer totalCount;
@@ -33,4 +36,4 @@ public class DeviceStatusStatisticsVO {
 
     @Schema(description = "设备故障类型分布")
     private List<Map<String, Object>> faultTypeDistribution;
-} 
+}

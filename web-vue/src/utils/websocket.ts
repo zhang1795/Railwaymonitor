@@ -1,255 +1,142 @@
+import { ref, readonly } from 'vue'
+import request from '@/api/request'
+
 export interface WebSocketMessage {
-  type: 'video_frame' | 'camera_status' | 'start_stream' | 'stop_stream' | 'check_camera' | 'stream_stopped' | 'stream_ready'
-  data: {
-    wsId?: string      // 添加 wsId 字段
-    cameraId: number
-    rtspUrl?: string   // RTSP地址
-    frame?: string     // base64编码的图片
-    status?: number    // 摄像头状态
-    location?: string
-    [key: string]: any
-  }
+  type: 'video_frame'|'camera_status'|'start_stream'|'stop_stream'|'check_camera'|'stream_stopped'|'stream_ready'|'authenticated'|'source_quality'
+  data: { cameraId:number; frame?:string; status?:number; [key:string]:any }
 }
+type ConnectionState = 'idle'|'connecting'|'authenticating'|'connected'|'reconnecting'|'failed'
+const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+const url = import.meta.env.VITE_ALGO_WS_URL || `${protocol}://${window.location.host}/stream/ws`
 
-// WebSocket服务器URL
-const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-const WS_URL = import.meta.env.VITE_ALGO_WS_URL || `${wsProtocol}://${window.location.hostname}:5000/ws`
+export class WebSocketClient {
+  private ws: WebSocket|null = null
+  private state = ref<ConnectionState>('idle')
+  readonly connectionState = readonly(this.state)
+  private handlers = new Set<(message:WebSocketMessage)=>void>()
+  private streams = new Set<number>()
+  private checks = new Set<number>()
+  private restarting = new Map<number, ReturnType<typeof setTimeout>>()
+  private retryTimer?:ReturnType<typeof setTimeout>
+  private handshake?:ReturnType<typeof setTimeout>
+  private renewTimer?:ReturnType<typeof setInterval>
+  private attempts = 0
+  private activeClose = false
+  private epoch = 0
 
-class WebSocketClient {
-  private ws: WebSocket | null = null
-  private url: string
-  private reconnectAttempts = 0
-  private maxReconnectAttempts = 5
-  private reconnectTimeout = 3000
-  private messageHandlers: ((message: WebSocketMessage) => void)[] = []
-  private isActiveClose = false
-  private reconnectTimer: number | null = null
-  private messageQueue: any[] = []  // 消息队列
-  private isConnecting = false  // 连接状态标记
-
-  constructor(url: string) {
-    this.url = url
-    console.log('WebSocket URL:', url)
-  }
-
-  // 连接WebSocket
+  constructor(private url:string) {}
+  isConnected() { return this.state.value === 'connected' }
   connect() {
-    // 如果已经连接，不要重复连接
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      console.log('WebSocket已经连接')
-      this.processMessageQueue()  // 处理可能存在的消息队列
-      return
-    }
-
-    // 如果正在连接，等待连接完成
-    if (this.ws?.readyState === WebSocket.CONNECTING || this.isConnecting) {
-      console.log('WebSocket正在连接中')
-      return
-    }
-
-    // 如果存在旧的连接，先清理
+    if (this.ws && (this.ws.readyState===WebSocket.CONNECTING || this.ws.readyState===WebSocket.OPEN)) return
     this.cleanup()
-
-    // 重置状态
-    this.isActiveClose = false
-    this.isConnecting = true
-    console.log('正在连接WebSocket:', this.url)
-
+    this.activeClose = false
+    this.state.value = 'connecting'
+    const epoch = this.epoch
     try {
-      this.ws = new WebSocket(this.url)
-
-      this.ws.onopen = () => {
-        console.log('WebSocket连接成功')
-        this.reconnectAttempts = 0
-        this.clearReconnectTimer()
-        this.isConnecting = false
-        this.processMessageQueue()  // 连接成功后处理消息队列
-      }
-
-      this.ws.onmessage = (event) => {
+      const socket = new WebSocket(this.url)
+      this.ws = socket
+      const current = () => this.epoch === epoch && this.ws === socket && !this.activeClose
+      this.handshake = setTimeout(() => { if(current()) this.failedConnection() }, 12000)
+      socket.onopen = async () => {
+        this.state.value = 'authenticating'
         try {
-          const message: WebSocketMessage = JSON.parse(event.data)
-          this.messageHandlers.forEach(handler => handler(message))
-        } catch (error) {
-          console.error('WebSocket消息解析失败:', error)
-        }
+          const {grant} = await request.post<{grant:string}>('/preview/grant')
+          if (!current() || socket.readyState !== WebSocket.OPEN) return
+          socket.send(JSON.stringify({type:'authenticate',data:{grant}}))
+          this.renewTimer = setInterval(() => {
+            request.post('/preview/grant/renew',{grant}).catch(() => { if(current()) this.failedConnection() })
+          },60000)
+        } catch { if(current()) this.failedConnection() }
       }
-
-      this.ws.onclose = (event) => {
-        console.log('WebSocket连接关闭:', {
-          code: event.code,
-          reason: event.reason,
-          wasClean: event.wasClean,
-          isActiveClose: this.isActiveClose
-        })
-
-        this.isConnecting = false
-
-        // 只有在非主动关闭且不是正常关闭的情况下才重连
-        if (!this.isActiveClose && !event.wasClean) {
-          this.scheduleReconnect()
-        } else {
-          console.log('WebSocket正常关闭，不进行重连')
-          this.cleanup()
+      socket.onmessage = event => {
+        if(!current()) return
+        let message:WebSocketMessage
+        try { message = JSON.parse(event.data) } catch { return }
+        if(!message?.data || typeof message.type !== 'string') return
+        if(message.type === 'authenticated') {
+          if(this.handshake) clearTimeout(this.handshake)
+          this.handshake = undefined
+          this.attempts = 0
+          this.state.value = 'connected'
+          for(const id of this.streams) this.sendImmediate({type:'start_stream',data:{cameraId:id}})
+          for(const id of this.checks) this.sendImmediate({type:'check_camera',data:{cameraId:id}})
+          this.checks.clear()
         }
+        if(message.type === 'stream_stopped' && this.restarting.has(message.data.cameraId)) this.finishRestart(message.data.cameraId)
+        for(const handler of this.handlers) handler(message)
       }
-
-      this.ws.onerror = (event) => {
-        this.isConnecting = false
-        // 只在开发环境下打印详细错误
-        if (import.meta.env.DEV) {
-          console.error('WebSocket错误:', event)
-        }
-        // 生产环境下打印简化的错误信息
-        console.error('WebSocket连接出错')
-      }
-    } catch (error) {
-      this.isConnecting = false
-      console.error('创建WebSocket连接失败:', error)
-      this.scheduleReconnect()
-    }
+      socket.onclose = () => { if(current()) this.failedConnection() }
+      socket.onerror = () => { if(current()) this.failedConnection() }
+    } catch { this.failedConnection() }
   }
-
-  // 处理消息队列
-  private processMessageQueue() {
-    while (this.messageQueue.length > 0) {
-      const message = this.messageQueue.shift()
-      this.sendImmediate(message)
-    }
-  }
-
-  // 立即发送消息
-  private sendImmediate(message: any) {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.error('WebSocket未连接，消息发送失败')
-      return
-    }
-
-    try {
-      this.ws.send(JSON.stringify(message))
-    } catch (error) {
-      console.error('发送消息失败:', error)
-    }
-  }
-
-  // 发送消息
-  send(message: any) {
-    // 如果WebSocket未连接，先连接
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.log('WebSocket未连接，将消息加入队列并尝试连接')
-      this.messageQueue.push(message)
-      this.connect()
-      return
-    }
-
-    this.sendImmediate(message)
-  }
-
-  // 清理资源
   private cleanup() {
-    if (this.ws) {
-      // 移除所有事件监听器
-      this.ws.onopen = null
-      this.ws.onclose = null
-      this.ws.onmessage = null
-      this.ws.onerror = null
-
-      // 如果连接还在打开状态，尝试正常关闭
-      if (this.ws.readyState === WebSocket.OPEN) {
-        try {
-          this.ws.close(1000, 'Normal closure')
-        } catch (error) {
-          console.error('关闭WebSocket连接失败:', error)
-        }
+    this.epoch++
+    if(this.retryTimer) clearTimeout(this.retryTimer)
+    if(this.handshake) clearTimeout(this.handshake)
+    if(this.renewTimer) clearInterval(this.renewTimer)
+    this.retryTimer = undefined; this.handshake = undefined; this.renewTimer = undefined
+    for(const timer of this.restarting.values()) clearTimeout(timer)
+    this.restarting.clear()
+    if(this.ws) {
+      const socket=this.ws;this.ws=null
+      socket.onopen=null;socket.onclose=null;socket.onmessage=null;socket.onerror=null
+      if(socket.readyState===WebSocket.OPEN || socket.readyState===WebSocket.CONNECTING) {
+        try { socket.close(1000,'Preview connection reset') } catch { /* Already closing. */ }
       }
-
-      this.ws = null
-    }
-
-    this.clearReconnectTimer()
-  }
-
-  // 清除重连定时器
-  private clearReconnectTimer() {
-    if (this.reconnectTimer) {
-      window.clearTimeout(this.reconnectTimer)
-      this.reconnectTimer = null
     }
   }
-
-  // 安排重连
-  private scheduleReconnect() {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('WebSocket重连次数超过最大限制')
-      this.cleanup()
-      return
-    }
-
-    this.reconnectAttempts++
-    console.log('WebSocket计划第' + this.reconnectAttempts + '次重连')
-
-    this.clearReconnectTimer()
-    this.reconnectTimer = window.setTimeout(() => {
-      console.log('执行重连...')
-      this.connect()
-    }, this.reconnectTimeout)
-  }
-
-  // 添加消息处理器
-  addMessageHandler(handler: (message: WebSocketMessage) => void) {
-    this.messageHandlers.push(handler)
-  }
-
-  // 移除消息处理器
-  removeMessageHandler(handler: (message: WebSocketMessage) => void) {
-    const index = this.messageHandlers.indexOf(handler)
-    if (index !== -1) {
-      this.messageHandlers.splice(index, 1)
-    }
-  }
-
-  // 关闭连接
-  close() {
-    console.log('主动关闭WebSocket连接')
-    this.isActiveClose = true
+  private failedConnection() {
     this.cleanup()
+    if(this.activeClose) { this.state.value='idle';return }
+    if(this.attempts>=5) { this.state.value='failed';return }
+    this.state.value='reconnecting'
+    this.attempts++
+    this.retryTimer=setTimeout(()=>{this.retryTimer=undefined;this.connect()},3000)
   }
-
-  // 检查WebSocket是否已连接
-  isConnected(): boolean {
-    // 检查WebSocket实例是否存在，以及它的连接状态是否为OPEN
-    // 如果WebSocket正在连接中(CONNECTING)或者是不存在的，都返回false
-    if (!this.ws) {
-      return false
+  private sendImmediate(message:WebSocketMessage) {
+    if(!this.isConnected() || this.ws?.readyState!==WebSocket.OPEN) return
+    try { this.ws.send(JSON.stringify(message)) } catch { this.failedConnection() }
+  }
+  send(message:WebSocketMessage) {
+    const id=message.data.cameraId
+    if(message.type==='stop_stream') {
+      this.streams.delete(id)
+      const timer=this.restarting.get(id);if(timer)clearTimeout(timer)
+      this.restarting.delete(id)
+      // Unmounting during an outage must never create a new socket.
+      this.sendImmediate(message);return
     }
-    
-    // 确保只有在状态为WebSocket.OPEN时才返回true
-    return this.ws.readyState === WebSocket.OPEN
+    if(message.type==='start_stream') {
+      if(this.streams.has(id)) return
+      this.streams.add(id)
+    } else if(message.type==='check_camera' && !this.isConnected()) {
+      if(this.checks.size>=64) throw new Error('预览命令队列已满')
+      this.checks.add(id)
+    }
+    if(this.isConnected()) this.sendImmediate(message)
+    else if(this.state.value!=='failed') this.connect()
   }
-
-  // 重置连接状态
+  retryStream(id:number) {
+    this.streams.add(id)
+    if(!this.isConnected()) { this.attempts=0;this.cleanup();this.connect();return }
+    const previous=this.restarting.get(id);if(previous)clearTimeout(previous)
+    // Wait for stream_stopped, not an arbitrary 500ms, before restarting.
+    this.restarting.set(id,setTimeout(()=>this.finishRestart(id),6500))
+    this.sendImmediate({type:'stop_stream',data:{cameraId:id}})
+  }
+  private finishRestart(id:number) {
+    const timer=this.restarting.get(id);if(timer)clearTimeout(timer)
+    this.restarting.delete(id)
+    if(this.streams.has(id))this.sendImmediate({type:'start_stream',data:{cameraId:id}})
+  }
+  addMessageHandler(handler:(message:WebSocketMessage)=>void) { this.handlers.add(handler) }
+  removeMessageHandler(handler:(message:WebSocketMessage)=>void) { this.handlers.delete(handler) }
   resetConnectionState() {
-    // 如果连接正在尝试连接或已连接，不做任何操作
-    if (this.ws && (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)) {
-      return
-    }
-    
-    // 如果连接已关闭或发生错误，重置连接状态
-    this.isActiveClose = false
-    this.isConnecting = false
-    this.clearReconnectTimer()
-    
-    // 如果存在未释放的WebSocket资源，进行清理
-    if (this.ws) {
-      this.cleanup()
-    }
-    
-    // 尝试重新连接
-    this.connect()
+    if(this.isConnected() || this.state.value==='connecting' || this.state.value==='authenticating')return
+    this.attempts=0;this.cleanup();this.connect()
+  }
+  close() {
+    this.activeClose=true;this.streams.clear();this.checks.clear();this.cleanup();this.state.value='idle'
   }
 }
-
-// 创建WebSocket客户端实例
-const wsClient = new WebSocketClient(WS_URL)
-
-export default wsClient 
+export default new WebSocketClient(url)

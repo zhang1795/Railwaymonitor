@@ -1,0 +1,212 @@
+{
+  "checkedAt": "2026-11-10T19:36:24.967317+08:00",
+  "businessWrites": 0,
+  "cameras": {
+    "total": 15,
+    "sample": [
+      {
+        "id": 1,
+        "status": 0,
+        "hasCoordinates": true
+      },
+      {
+        "id": 2,
+        "status": 0,
+        "hasCoordinates": true
+      },
+      {
+        "id": 3,
+        "status": 0,
+        "hasCoordinates": true
+      },
+      {
+        "id": 4,
+        "status": 0,
+        "hasCoordinates": true
+      },
+      {
+        "id": 5,
+        "status": 1,
+        "hasCoordinates": true
+      },
+      {
+        "id": 6,
+        "status": 2,
+        "hasCoordinates": true
+      },
+      {
+        "id": 7,
+        "status": 2,
+        "hasCoordinates": true
+      },
+      {
+        "id": 8,
+        "status": 2,
+        "hasCoordinates": true
+      },
+      {
+        "id": 9,
+        "status": 2,
+        "hasCoordinates": true
+      },
+      {
+        "id": 11,
+        "status": 2,
+        "hasCoordinates": true
+      },
+      {
+        "id": 18,
+        "status": 0,
+        "hasCoordinates": true
+      },
+      {
+        "id": 19,
+        "status": 0,
+        "hasCoordinates": true
+      },
+      {
+        "id": 20,
+        "status": 1,
+        "hasCoordinates": true
+      },
+      {
+        "id": 21,
+        "status": 1,
+        "hasCoordinates": true
+      },
+      {
+        "id": 22,
+        "status": 1,
+        "hasCoordinates": true
+      }
+    ]
+  },
+  "monitoring": [
+    {
+      "camera_id": 21,
+      "enabled": false,
+      "state": "STOPPED",
+      "last_status_at": "2026-11-10T06:45:22.148",
+      "hasError": false
+    },
+    {
+      "camera_id": 22,
+      "enabled": true,
+      "state": "RUNNING",
+      "last_status_at": "2026-11-10T11:36:20.448",
+      "hasError": false
+    }
+  ],
+  "events": {
+    "total": 319,
+    "samples": [
+      {
+        "id": 527,
+        "cameraId": 22,
+        "type": "工人",
+        "detectedType": "工人",
+        "confidence": 0.3392792344093323,
+        "detectionState": "ENDED",
+        "status": 0,
+        "hasImage": false,
+        "hasDescription": true
+      },
+      {
+        "id": 526,
+        "cameraId": 22,
+        "type": "工人",
+        "detectedType": "工人",
+        "confidence": 0.6825665831565857,
+        "detectionState": "ENDED",
+        "status": 0,
+        "hasImage": false,
+        "hasDescription": true
+      },
+      {
+        "id": 525,
+        "cameraId": 22,
+        "type": "工人",
+        "detectedType": "工人",
+        "confidence": 0.7200380563735962,
+        "detectionState": "ENDED",
+        "status": 0,
+        "hasImage": false,
+        "hasDescription": true
+      },
+      {
+        "id": 524,
+        "cameraId": 22,
+        "type": "风筝",
+        "detectedType": "风筝",
+        "confidence": 0.48787277936935425,
+        "detectionState": "ENDED",
+        "status": 0,
+        "hasImage": false,
+        "hasDescription": true
+      },
+      {
+        "id": 523,
+        "cameraId": 22,
+        "type": "风筝",
+        "detectedType": "风筝",
+        "confidence": 0.5065581798553467,
+        "detectionState": "ENDED",
+        "status": 0,
+        "hasImage": false,
+        "hasDescription": true
+      }
+    ]
+  },
+  "eventDetailFields": [
+    "cameraId",
+    "cameraName",
+    "confidence",
+    "createTime",
+    "description",
+    "detectedType",
+    "detectionState",
+    "eventTime",
+    "firstSeen",
+    "handleResult",
+    "handleTime",
+    "handlerId",
+    "handlerName",
+    "id",
+    "imageUrl",
+    "lastSeen",
+    "level",
+    "location",
+    "status",
+    "type"
+  ],
+  "statisticsResponseShapes": {
+    "overview": {
+      "todayAbnormalEvents": "int",
+      "onlineDevices": "int",
+      "runningDays": "int",
+      "weeklyTrend": "list",
+      "deviceStatus": "list",
+      "recentAlarms": "list",
+      "pendingItems": "dict"
+    },
+    "event": {
+      "totalCount": "int",
+      "handledCount": "int",
+      "processingCount": "int",
+      "pendingCount": "int",
+      "trendData": "list",
+      "typeDistribution": "list",
+      "locationHeatmap": "list",
+      "typeNameDistribution": "list"
+    },
+    "device": {
+      "totalCount": "int",
+      "onlineCount": "int",
+      "offlineCount": "int",
+      "faultCount": "int",
+      "statusDistribution": "list",
+      "onlineRateTrend": "list",
+      "faultTypeDistribution": "list"
+    }
+  }
+}

@@ -1,18 +1,128 @@
-import time
+"""Lazy, serialized YOLO inference shared by video tasks."""
 import os
+import threading
+import time
+from pathlib import Path
 
-import numpy as np
 import cv2
+import numpy as np
 import torch
-from numpy import random
 
-from models.experimental import attempt_load
-from utils.general import check_img_size, non_max_suppression, scale_coords, \
-    set_logging
-from utils.torch_utils import select_device, time_synchronized
-from utils.plots import Annotator, colors
-from sort import *
-mot_tracker = Sort(max_age=1, min_hits=3, iou_threshold=0.3)
+from detections import Detection
+from inference_gate import FairInferenceGate
+
+_MODEL_GATE = FairInferenceGate()
+
+
+class DetectionCancelled(InterruptedError):
+    pass
+
+
+class Detector:
+    def __init__(self, weights=None, device=None, model=None, imgsz=640,
+                 conf_thres=.25, iou_thres=.3):
+        self.weights = weights or os.getenv('RAILWAY_MODEL_PATH',
+                    str(Path(__file__).resolve().parent / 'models' / 'best1030.pt'))
+        self.device_name = device or os.getenv('RAILWAY_DEVICE', 'cpu')
+        self.model = model
+        self.device = torch.device(self.device_name) if model is not None else None
+        self.imgsz = imgsz
+        self.conf_thres, self.iou_thres = conf_thres, iou_thres
+        self._load_lock = threading.Lock()
+        self._metrics=threading.local()
+
+    def _ensure_model(self,stop_event=None):
+        if self.model is not None:
+            return
+        while not self._load_lock.acquire(timeout=.05):
+            if stop_event is not None and stop_event.is_set():raise DetectionCancelled()
+        try:
+            if self.model is None:
+                from models.experimental import attempt_load
+                from utils.general import check_img_size
+                from utils.torch_utils import select_device
+                self.device = select_device(self.device_name)
+                with _MODEL_GATE.hold(stop_event,DetectionCancelled):
+                    model = attempt_load(self.weights, map_location=self.device)
+                    self.imgsz = check_img_size(self.imgsz, s=model.stride.max())
+                    if self.device.type != 'cpu':
+                        model.half()
+                    self.model = model
+        finally:self._load_lock.release()
+
+    def metrics(self):return dict(getattr(self._metrics,'value',{}))
+
+    def detect(self, frame, stop_event=None):
+        if frame is None or frame.ndim != 3 or frame.shape[2] != 3 or not frame.size:
+            raise ValueError('expected a nonempty BGR image')
+        if stop_event is not None and stop_event.is_set():
+            raise DetectionCancelled()
+        self._ensure_model(stop_event)
+        from utils.general import non_max_suppression, scale_coords
+        image = letterbox(frame, new_shape=self.imgsz)[0]
+        image = np.ascontiguousarray(image[:, :, ::-1].transpose(2, 0, 1))
+        tensor = torch.from_numpy(image).to(self.device)
+        tensor = tensor.half() if self.device.type != 'cpu' else tensor.float()
+        tensor = tensor.unsqueeze(0) / 255.
+        with _MODEL_GATE.hold(stop_event,DetectionCancelled) as waited:
+            if stop_event is not None and stop_event.is_set():
+                raise DetectionCancelled()
+            with torch.no_grad():
+                started=time.monotonic()
+                prediction = self.model(tensor)[0]
+            self._metrics.value={'inferenceWaitMs':round(waited*1000,3),'inferenceMs':round((time.monotonic()-started)*1000,3)}
+        if stop_event is not None and stop_event.is_set():
+            raise DetectionCancelled()
+        output = non_max_suppression(prediction, self.conf_thres, self.iou_thres)[0]
+        if not len(output):
+            return []
+        output[:, :4] = scale_coords(tensor.shape[2:], output[:, :4], frame.shape)
+        names = self.model.module.names if hasattr(self.model, 'module') else self.model.names
+        result = []
+        for index, row in enumerate(output.detach().cpu().tolist()):
+            x1, y1, x2, y2, confidence, class_value = row
+            class_id = int(class_value)
+            try:
+                name = names[class_id]
+            except (KeyError, IndexError):
+                continue
+            detection = Detection((x1, y1, x2, y2), class_id, name, confidence, index)
+            if detection.valid():
+                result.append(detection)
+        return result
+
+
+_default = Detector()
+
+
+def detect(frame, stop_event=None):
+    return _default.detect(frame, stop_event)
+
+
+def predict(frame):
+    result = []
+    scores = []
+    for d in detect(frame):
+        x1, y1, x2, y2 = d.bbox
+        result.append({'objectDetect': d.class_name, 'score': d.confidence,
+                       'location': {'center_x': (x1+x2)/2, 'center_y': (y1+y2)/2,
+                                    'width': x2-x1, 'height': y2-y1}})
+        scores.append(d.confidence)
+    return result, scores
+
+
+def detect_bounding_box(frame):
+    records = detect(frame)
+    return [list(d.bbox) for d in records], [d.class_name for d in records]
+
+
+def process_frame(frame, tracker, detector=None, stop_event=None, observed_at=None):
+    if stop_event is not None and stop_event.is_set():
+        raise DetectionCancelled()
+    records = (detector or _default).detect(frame, stop_event)
+    if stop_event is not None and stop_event.is_set():
+        raise DetectionCancelled()
+    return records, tracker.update_detections(records, timestamp=observed_at)
 
 
 def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
@@ -45,123 +155,4 @@ def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scale
     top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
     left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
     img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
-    return img, ratio, (dw, dh)      
-
-
-#weights = r'./models/roaddetection.pt'
-#weights = r'./models/military.pt'
-weights = os.getenv('RAILWAY_MODEL_PATH', './models/best1030.pt')
-opt_device = os.getenv('RAILWAY_DEVICE', 'cpu')  # 初步部署默认使用 CPU
-imgsz = 640
-opt_conf_thres = 0.25
-opt_iou_thres = 0.3
-# Initialize
-set_logging()
-device = select_device(opt_device)
-half = device.type != 'cpu'  # half precision only supported on CUDA
-# Load model
-model = attempt_load(weights, map_location=device) # load FP32 model
-imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
-if half:
-    model.half()  # to FP16
-# Get names and colors
-names = model.module.names if hasattr(model, 'module') else model.names
-# colors = [[random.randint(0, 255) for _ in range(3)] for _ in names1]
-
-# from utils.plots import plot_one_box,plot_one_box_PIL
-
-def plot_one_box(x, img, label=None, color=None, line_thickness=3):
-    c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
-    tl = line_thickness or round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1  # line/font thickness
-    color = color or [random.randint(0, 255) for _ in range(3)]
-    cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
-    if label:
-        tf = max(tl - 1, 1)  # font thickness
-        t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]
-        c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
-        cv2.rectangle(img, c1, c2, color, -1, cv2.LINE_AA)  # filled
-        cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
-
-
-def predict(im0s):
-    # Run inference
-    img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
-    # _ = predict_model(img.half() if half else img) if device.type != 'cpu' else None  # run once
-    # Set Dataloader & Run inference
-    img = letterbox(im0s, new_shape=imgsz)[0]
-    # Convert
-    img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
-    img = np.ascontiguousarray(img)
-
-    img = torch.from_numpy(img).to(device)
-    img = img.half() if half else img.float()  # uint8 to fp16/32
-    img /= 255.0  # 0 - 255 to 0.0 - 1.0
-    if img.ndimension() == 3:
-        img = img.unsqueeze(0)
-    # Inference
-    #pred = model(img, augment=opt.augment)[0]
-    pred = model(img)[0]
-    # Apply NMS
-    pred = non_max_suppression(pred, opt_conf_thres, opt_iou_thres)
-    # Process detections
-    ret = []
-    score = []
-    for i, det in enumerate(pred):  # detections per image
-        if len(det):
-            # Rescale boxes from img_size to im0 size
-            det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0s.shape).round()
-            # Write results
-            for *xyxy, conf, cls in reversed(det):
-                label = f'{names[int(cls)]} {conf:.2f}'
-                label2 = f'{names[int(cls)]}'
-                prob = round(float(conf),2)  # round 2
-                #plot_one_box(xyxy, im0s, label=label, color=colors(int(cls)), line_thickness=3)
-                xywh = xyxy
-                x = int(xywh[0])
-                y = int(xywh[1])
-                w = x+(int(xywh[2]) - int(xywh[0]))/2
-                h = y+(int(xywh[3]) - int(xywh[1]))/2
-                w1 = (int(xywh[2]) - int(xywh[0]))
-                h1 = (int(xywh[3]) - int(xywh[1]))
-                position = {'center_x': w, 'center_y': h, 'width': w1, 'height': h1}
-                ret_i = {'objectDetect': label2, 'score': prob, 'location': position}
-                ret.append(ret_i)
-                score.append(prob)
-    return ret,score
-
-def detect_bounding_box(im0s):
-
-    boxes = []
-    classes = []
-    img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
-    # _ = predict_model(img.half() if half else img) if device.type != 'cpu' else None  # run once
-    # Set Dataloader & Run inference
-    img = letterbox(im0s, new_shape=imgsz)[0]
-    # Convert
-    img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
-    img = np.ascontiguousarray(img)
-
-    img = torch.from_numpy(img).to(device)
-    img = img.half() if half else img.float()  # uint8 to fp16/32
-    img /= 255.0  # 0 - 255 to 0.0 - 1.0
-    if img.ndimension() == 3:
-        img = img.unsqueeze(0)
-    # Inference
-    # pred = model(img, augment=opt.augment)[0]
-    pred = model(img)[0]
-    # Apply NMS
-    pred = non_max_suppression(pred, opt_conf_thres, opt_iou_thres)
-    for i, det in enumerate(pred):
-
-        if len(det):
-                # 将预测的尺寸从imgs回到原图片尺寸
-            det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0s.shape).round()
-            for *xyxy, conf, cls in reversed(det):
-                box = []
-                for value in xyxy:
-                    box.append(float(value))
-                c = int(cls)
-                classes.append(names[c])
-                boxes.append(box)
-        # boxes包含结果（x1,y1,x2,y2）
-    return boxes, classes
+    return img, ratio, (dw, dh)

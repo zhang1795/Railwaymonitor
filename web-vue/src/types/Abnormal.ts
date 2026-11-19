@@ -1,5 +1,15 @@
 // 异常事件
 export interface AbnormalEvent {
+  version: number
+  manualOverride?:boolean
+  risk?: {kind:string;state:string;risk_level?:number;risk_since?:string;missing_since?:string;last_observed?:string;association?:string}
+  unreadNoticeIds?: string[]
+  type?: string
+  detectionState?: string
+  detectedType?: string
+  confidence?: number
+  firstSeen?: string
+  lastSeen?: string
   id: number
   cameraId: number
   cameraName?: string
@@ -35,6 +45,7 @@ export enum AbnormalStatus {
 
 // 异常事件列表查询参数
 export interface AbnormalEventQueryParams {
+  unreadOnly?: boolean
   current: number
   size: number
   cameraId?: number
@@ -68,7 +79,8 @@ export interface AbnormalEventCreateParams {
 
 // 处理异常事件参数
 export interface AbnormalEventHandleParams {
+  version: number
   id: number
   handlerId: number
   handleResult: string
-} 
+}

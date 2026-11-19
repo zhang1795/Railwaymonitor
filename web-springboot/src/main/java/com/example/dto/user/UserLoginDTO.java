@@ -18,5 +18,6 @@ public class UserLoginDTO {
      * 密码
      */
     @NotBlank(message = "密码不能为空")
+    @lombok.ToString.Exclude
     private String password;
 } 

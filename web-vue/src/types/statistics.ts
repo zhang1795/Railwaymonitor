@@ -18,26 +18,27 @@ export interface StatisticsVO {
 // 异常事件统计
 export interface AbnormalEventStatisticsVO {
   // 总数统计
-  total: number
-  processing: number
-  processed: number
+  totalCount: number
+  processingCount: number
+  handledCount: number
+  pendingCount: number
   // 趋势数据
-  trend: {
+  trendData: {
     date: string
     count: number
   }[]
   // 等级分布
   typeDistribution: {
-    type: string
+    level: number
     count: number
   }[]
   // 热力图数据
-  heatmap: {
+  locationHeatmap: {
     location: string
     count: number
   }[]
   // 类型分布
-  abnormalTypeNameDistribution: {
+  typeNameDistribution: {
     type: string 
     count: number 
   }[]
@@ -45,6 +46,9 @@ export interface AbnormalEventStatisticsVO {
 
 // 设备状态统计
 export interface DeviceStatusStatisticsVO {
+  statusSource?: string
+  trendSource?: string
+  unknownCount?: number
   // 总数统计
   totalCount: number
   onlineCount: number
@@ -58,7 +62,9 @@ export interface DeviceStatusStatisticsVO {
   // 在线率趋势
   onlineRateTrend: {
     date: string
-    rate: number | string
+    rate: number | string | null
+    knownSamples?: number
+    unknownSamples?: number
   }[]
   // 故障类型分布
   faultTypeDistribution: {

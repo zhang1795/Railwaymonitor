@@ -9,6 +9,8 @@ import lombok.Data;
  */
 @Data
 public class AbnormalEventHandleDTO {
+    @NotNull @jakarta.validation.constraints.Min(0)
+    private Long version;
     /**
      * 事件ID
      */
@@ -18,12 +20,12 @@ public class AbnormalEventHandleDTO {
     /**
      * 处理人ID
      */
-    @NotNull(message = "处理人ID不能为空")
     private Long handlerId;
 
     /**
      * 处理结果
      */
     @NotBlank(message = "处理结果不能为空")
+    @jakarta.validation.constraints.Size(max=2000)
     private String handleResult;
-} 
+}

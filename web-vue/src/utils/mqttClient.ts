@@ -27,7 +27,8 @@ export interface MqttMessage {
 
 class MqttClient {
   private client: MqttClientType | null = null
-  private messageHandlers: Map<string, (message: MqttMessage) => void> = new Map()
+  private messageHandlers = new Map<string, (message: unknown) => void>()
+  private subscriptions = new Map<string, 0 | 1 | 2>()
 
   /**
    * 连接MQTT服务器
@@ -40,7 +41,7 @@ class MqttClient {
     port: number = Number(import.meta.env.VITE_MQTT_WS_PORT || 8083),
     options?: IClientOptions
   ) {
-    if (this.client && this.client.connected) return
+    if (this.client) return // An existing client also owns its reconnect loop.
 
     // 合并默认选项和用户选项
     const clientOptions: IClientOptions = {
@@ -55,6 +56,7 @@ class MqttClient {
 
     this.client.on('connect', () => {
       console.log('MQTT连接成功')
+      for (const [topic, qos] of this.subscriptions) this.client?.subscribe(topic, { qos })
     })
 
     this.client.on('message', this.handleMessage.bind(this))
@@ -120,6 +122,7 @@ class MqttClient {
    * @param qos QoS等级，默认0
    */
   subscribe(topic: string, qos: 0 | 1 | 2 = 0) {
+    this.subscriptions.set(topic, qos)
     if (!this.client || !this.client.connected) {
       console.warn('MQTT未连接，无法订阅主题')
       return
@@ -139,6 +142,7 @@ class MqttClient {
    * @param topic 主题名称
    */
   unsubscribe(topic: string) {
+    this.subscriptions.delete(topic)
     if (!this.client || !this.client.connected) {
       console.warn('MQTT未连接，无法取消订阅主题')
       return
@@ -158,8 +162,8 @@ class MqttClient {
    * @param topic 主题名称
    * @param handler 消息处理函数
    */
-  registerHandler(topic: string, handler: (message: MqttMessage) => void) {
-    this.messageHandlers.set(topic, handler)
+  registerHandler<T = MqttMessage>(topic: string, handler: (message: T) => void) {
+    this.messageHandlers.set(topic, handler as (message: unknown) => void)
   }
 
   /**

@@ -17,6 +17,7 @@ matplotlib==3.7.5
 minio==7.2.10
 numpy==1.24.4
 opencv-python==4.10.0.84
+av==12.3.0
 packaging==24.2
 paho-mqtt==2.1.0
 pandas==2.0.3

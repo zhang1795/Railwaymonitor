@@ -1,0 +1,20 @@
+{
+  "weight_sha256": "f9887d1699275990353fa03fa721251a955b257a6571e0c4762365a38ede0052",
+  "torch": "1.8.0+cu111",
+  "device": "cpu",
+  "baseline_commit": "086b8df813ebaaf9e69b8d29f07fd98363531d49",
+  "sample_frames": 3,
+  "detections_per_frame": [
+    2,
+    2,
+    1
+  ],
+  "single_pass_seconds": [
+    0.21898097218945622,
+    0.17806586204096675,
+    0.18069274118170142
+  ],
+  "mixed_shape_parallel_cases": 4,
+  "serial_parallel_equivalent": true,
+  "weights_unchanged": true
+}

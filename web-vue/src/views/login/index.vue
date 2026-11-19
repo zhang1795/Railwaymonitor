@@ -54,7 +54,7 @@
         </el-tab-pane>
         
         <!-- 注册表单 -->
-        <el-tab-pane name="register" label="注册">
+        <el-tab-pane v-if="false" name="register" label="注册">
           <el-form
             ref="registerFormRef"
             :model="form"
@@ -180,7 +180,7 @@ const rules = {
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度应在6-20个字符之间', trigger: 'blur' }
+    { min: 6, max: 72, message: '密码长度应在6-72个字符之间', trigger: 'blur' }
   ]
 }
 
@@ -192,7 +192,7 @@ const registerRules = {
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度应在6-20个字符之间', trigger: 'blur' }
+    { min: 6, max: 72, message: '密码长度应在6-72个字符之间', trigger: 'blur' }
   ],
   confirmPassword: [
     { required: true, message: '请确认密码', trigger: 'blur' },

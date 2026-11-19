@@ -23,6 +23,10 @@
 </template>
 
 <script setup lang="ts">
+function escapeHtml(value: unknown) {
+  const replacements: Record<string,string> = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}
+  return String(value ?? '').replace(/[&<>"']/g, char => replacements[char])
+}
 import { onMounted, onUnmounted, ref, reactive, nextTick } from "vue";
 import AMapLoader from "@amap/amap-jsapi-loader";
 // 引入摄像头相关API和类型
@@ -59,6 +63,7 @@ let autoOptions = {
 }
 let searchText = ref('')
 let currentMarker = ref<any>(null); // 保存当前点标记实例（用于自动清除上一个）
+let disposed=false
 
 
 onMounted(() => {
@@ -91,6 +96,7 @@ async function initMap() {
         'AMap.Driving'
       ],
   }).then(AMap => {
+    if(disposed)return
     AMapObj = AMap
     map = new AMap.Map('amap', {
       zoom: 12,
@@ -149,7 +155,7 @@ async function initMap() {
     // 获取摄像头数据
     getCameraData()
   }
-  );
+  ).catch(()=>{if(!disposed)ElMessage.warning('地图加载失败，可在摄像头表单手工录入 GCJ-02 经纬度')});
 }
 
 
@@ -345,9 +351,9 @@ const getCameraData = async () => {
       cameraList.value.forEach(camera => {
         if (camera.longitude && camera.latitude) {
           createCameraMarker(camera)
-          console.log(`摄像头【${camera.name}】已在地图标记，坐标：${camera.longitude.toFixed(6)}, ${camera.latitude.toFixed(6)}`)
+          console.log(`摄像头【${escapeHtml(camera.name)}】已在地图标记，坐标：${camera.longitude.toFixed(6)}, ${camera.latitude.toFixed(6)}`)
         } else {
-          console.log(`摄像头【${camera.name}】无经纬度信息，跳过标记`)
+          console.log(`摄像头【${escapeHtml(camera.name)}】无经纬度信息，跳过标记`)
         }
       })
     } else {
@@ -368,7 +374,7 @@ const createCameraMarker = (camera: Camera) => {
       <img src="//a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-red.png" 
            style="width:32px;height:32px;filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
       <div style="font-size:12px;color:#333;margin-top:4px;background:white;padding:2px 4px;border-radius:2px;white-space:nowrap;">
-        ${camera.name}
+        ${escapeHtml(camera.name)}
       </div>
     </div>
   `;
@@ -387,10 +393,10 @@ const createCameraMarker = (camera: Camera) => {
 
     const infoContent = `
       <div style="padding:10px;min-width:200px;">
-        <div style="font-weight:bold;font-size:14px;margin-bottom:8px;color:#333;">${camera.name}</div>
+        <div style="font-weight:bold;font-size:14px;margin-bottom:8px;color:#333;">${escapeHtml(camera.name)}</div>
         <div style="font-size:12px;line-height:1.6;">
-          <p><span style="color:#666;">安装位置：</span>${camera.location || '未填写'}</p>
-          <p><span style="color:#666;">RTSP地址: </span>${camera.rtspUrl || '未填写'}</p>
+          <p><span style="color:#666;">安装位置：</span>${escapeHtml(camera.location || '未填写')}</p>
+          <p><span style="color:#666;">RTSP地址: </span>${escapeHtml(camera.rtspUrl || '由服务器管理')}</p>
           <p><span style="color:#666;">设备状态：</span><span style="${camera.status === 1 ? 'color:green' : camera.status === 2 ? 'color:red' : 'color:orange'}">${statusText}</span></p>
           <p><span style="color:#666;">经纬度：</span>${camera.longitude.toFixed(6)}, ${camera.latitude.toFixed(6)}</p>
         </div>
@@ -437,6 +443,7 @@ defineExpose({
 
 
 onUnmounted(() => {
+  disposed=true
   map?.destroy();
 });
 </script>

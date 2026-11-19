@@ -1,33 +1,19 @@
 package com.example.config;
-
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.*;
+import org.springframework.web.cors.*;
 import org.springframework.web.filter.CorsFilter;
-
-/**
- * 跨域配置
- */
+import java.util.*;
 @Configuration
 public class CorsConfig {
-
-    @Bean
-    public CorsFilter corsFilter() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        CorsConfiguration config = new CorsConfiguration();
-        // 允许跨域的源
-        config.addAllowedOriginPattern("*");
-        // 允许跨域的请求头
-        config.addAllowedHeader("*");
-        // 允许跨域的请求方法
-        config.addAllowedMethod("*");
-        // 允许携带cookie
-        config.setAllowCredentials(true);
-        // 暴露响应头
-        config.addExposedHeader("*");
-        // 配置所有接口都支持跨域
-        source.registerCorsConfiguration("/**", config);
+    @Bean public CorsFilter corsFilter(@Value("${railway.allowed-origins:}") String origins){
+        var source=new UrlBasedCorsConfigurationSource();
+        if(!origins.isBlank()){
+            var config=new CorsConfiguration();config.setAllowedOrigins(Arrays.asList(origins.split(",")));
+            config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
+            config.setAllowedHeaders(List.of("Content-Type","X-CSRF-TOKEN"));config.setAllowCredentials(true);
+            source.registerCorsConfiguration("/**",config);
+        }
         return new CorsFilter(source);
     }
-} 
+}

@@ -1,0 +1,24 @@
+YOLOv5 🚀 086b8df torch 1.8.0+cu111 CPU
+
+Fusing layers... 
+Model Summary: 275 layers, 7751288 parameters, 0 gradients
+{
+  "weight_sha256": "f9887d1699275990353fa03fa721251a955b257a6571e0c4762365a38ede0052",
+  "torch": "1.8.0+cu111",
+  "device": "cpu",
+  "baseline_commit": "086b8df813ebaaf9e69b8d29f07fd98363531d49",
+  "sample_frames": 3,
+  "detections_per_frame": [
+    2,
+    2,
+    1
+  ],
+  "single_pass_seconds": [
+    0.1897941380739212,
+    0.2942515145987272,
+    0.2403172953054309
+  ],
+  "mixed_shape_parallel_cases": 4,
+  "serial_parallel_equivalent": true,
+  "weights_unchanged": true
+}

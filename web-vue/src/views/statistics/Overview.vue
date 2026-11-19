@@ -10,6 +10,7 @@
               <el-button type="primary" @click="refreshData">刷新数据</el-button>
             </div>
           </template>
+          <el-alert title="事件数包含待核验观察、风险事件和历史记录，按建档日期统计；不等于持续提醒次数或已确认事故数。设备状态分布来自台账。" type="info" :closable="false" />
           <el-row v-loading="loading" :gutter="20">
             <!-- 趋势图区域 -->
             <el-col :span="24" class="mb-4">
@@ -40,7 +41,7 @@
                   <el-card shadow="hover">
                     <template #header>
                       <div class="card-header">
-                        <span>在线设备数</span>
+                        <span>近期有效检测路数</span>
                         <el-icon><Monitor /></el-icon>
                       </div>
                     </template>
@@ -66,13 +67,13 @@
                   <el-card shadow="hover">
                     <template #header>
                       <div class="card-header">
-                        <span>设备状态统计</span>
+                        <span>设备台账状态</span>
                       </div>
                     </template>
                     <div ref="deviceStatusChart" class="chart" />
                   </el-card>
                 </el-col>
-               
+
               </el-row>
             </el-col>
             <!-- 近期警报列表 -->
@@ -149,9 +150,9 @@ const statistics = ref<SystemOverviewVO>({
   pendingItems: {
     AbnormalEvents: 0,
 
- 
+
   },
- 
+
 })
 
 // 获取异常等级类型
@@ -222,7 +223,7 @@ const initAbnormalEventChart = () => {
             value: statistics.value.todayAbnormalEvents,
             itemStyle: { color: '#F56C6C' }
           },
-          
+
         ].filter(item => item.value > 0)
       }
     ]
@@ -236,7 +237,7 @@ const initDeviceStatusChart = () => {
   deviceStatusChartInstance = echarts.init(deviceStatusChart.value)
   const option = {
     title: {
-      text: '设备状态统计',
+      text: '设备台账状态',
       left: 'center'
     },
     tooltip: {
@@ -291,12 +292,12 @@ const initDeviceStatusChart = () => {
 const initTrendChart = () => {
   if (!trendChart.value) return
   trendChartInstance = echarts.init(trendChart.value)
-  
+
   // 对趋势数据按时间从小到大排序
   const sortedTrend = [...statistics.value.weeklyTrend].sort((a, b) => {
     return new Date(a.date).getTime() - new Date(b.date).getTime()
   })
-  
+
   const option = {
     title: {
       text: '本周事件趋势',
@@ -457,4 +458,4 @@ onUnmounted(() => {
 :deep(.el-table td) {
   padding: 8px 0;
 }
-</style> 
+</style>

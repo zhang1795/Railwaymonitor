@@ -1,0 +1,80 @@
+{
+  "runMode": "FULL",
+  "databaseOutageRecovered": true,
+  "backendHardKillRecovered": true,
+  "persistentIntentRestored": true,
+  "backendHash": "482d7299f5ca21ef4098a72c7d45fa2d54fa855b46adc710090fa65cdf23dc90",
+  "detectorHash": "a32943b4bfa559709bb19b08da10314d721c18e64df7e07fcf87b4d9c7428561",
+  "gatewayHash": "a23e6d6dc9645e459728f443f3a90bf98a5be9ac1a8e6a71a60b2b12dc9b5c76",
+  "sameSessionWithinLease": true,
+  "syntheticSessionAlarms": 1,
+  "realYoloTrackSources": 2,
+  "realYoloCowEvents": 2,
+  "continuous60SecondReminderAfterReadAndResolution": true,
+  "authenticatedScreenshotUpload": true,
+  "detectionContinuesAfterLogout": true,
+  "pendingFinal": 0,
+  "rejectedEvents": 0,
+  "authenticatedRtspSource": true,
+  "gunicornWebsocketGateway": true,
+  "independentSourceRecordingDecoded": true,
+  "authenticatedVideoRange": true,
+  "parallelRealRoutes": [
+    {
+      "camera": 1,
+      "concurrentWindowFps": 1.198,
+      "effectiveFps": 2.349,
+      "processedFrames": 146,
+      "decodedFrames": 1662,
+      "skippedFrames": 1516,
+      "processingP95Ms": 811.557,
+      "inferenceWaitMs": 475.873,
+      "frameAgeMs": 795.826
+    },
+    {
+      "camera": 2,
+      "concurrentWindowFps": 1.098,
+      "effectiveFps": 1.177,
+      "processedFrames": 15,
+      "decodedFrames": 354,
+      "skippedFrames": 339,
+      "processingP95Ms": 883.219,
+      "inferenceWaitMs": 408.255,
+      "frameAgeMs": 730.33
+    },
+    {
+      "camera": 3,
+      "concurrentWindowFps": 1.098,
+      "effectiveFps": 1.152,
+      "processedFrames": 14,
+      "decodedFrames": 337,
+      "skippedFrames": 323,
+      "processingP95Ms": 907.509,
+      "inferenceWaitMs": 342.18,
+      "frameAgeMs": 669.378
+    }
+  ],
+  "viewers": {
+    "twoAuthenticatedSessions": true,
+    "twoViewersReceiveJpeg": true,
+    "closingOneKeepsOther": true,
+    "stoppingPreviewKeepsDetection": true,
+    "detectionAdvancesWithoutPreview": true,
+    "clientSourceUrlIgnored": true,
+    "logoutStopsPreview": true,
+    "badOriginDenied": true,
+    "unauthenticatedPreviewDenied": true,
+    "frameCounts": {
+      "a": 2,
+      "b": 80
+    },
+    "productionClientReconnect": true,
+    "productionClientRetry": true,
+    "productionClientsIsolated": true,
+    "authenticatedScreenshotRead": true,
+    "anonymousScreenshotDenied": true,
+    "screenshotChecksumVerified": true,
+    "realUnreadReceipts": true,
+    "readingDoesNotResolve": true
+  }
+}

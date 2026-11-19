@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-10",
+  "initialResidualFindings": 3,
+  "manualRaceEntrypointsReproduced": 3,
+  "beforeFixBackendFailures": 5,
+  "beforeFixOfflineFontFailure": true,
+  "detectorTestsPassed": 61,
+  "flaskTestsPassed": 5,
+  "frontendCurrentTestsPassed": 6,
+  "frontendLegacyCompatibilityTestsPassed": 11,
+  "backendH2TestsPassed": 50,
+  "backendMySQLTestsPassed": 50,
+  "mqttFaultIntegrationTestsPassed": 1,
+  "brokerNegativeChecksPassed": 11,
+  "immutableArtifactTestsPassed": 4,
+  "productionFrontendBuildPassed": true,
+  "deploymentInterruptionOccurred": true,
+  "deploymentRecovered": true,
+  "conditionalP0GatePassed": true,
+  "uncovered": [
+    "visual browser interaction",
+    "public HTTPS ingress",
+    "multi-camera capacity",
+    "24h or longer soak",
+    "occlusion accuracy",
+    "permanent disk loss or node loss"
+  ],
+  "isolatedTestServicesCleanedUp": true,
+  "finalDeploymentHealthy": true,
+  "businessRejectedEvents": 0,
+  "pendingMetricFreshnessGapDeferredToP1": true
+}

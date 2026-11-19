@@ -1,0 +1,14 @@
+[
+  {
+    "case": "prior",
+    "captureExit": 0,
+    "strictDecodeExit": 1,
+    "errorBytes": 541
+  },
+  {
+    "case": "large-queue",
+    "captureExit": 0,
+    "strictDecodeExit": 0,
+    "errorBytes": 0
+  }
+]

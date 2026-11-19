@@ -1,0 +1,43 @@
+{
+  "backendReadySeconds": 7.759,
+  "detectorRecoverySeconds": 0.413,
+  "intentPreserved": true,
+  "beforeLegacy": 84,
+  "afterLegacy": 84,
+  "comparedHumanRecords": 1266,
+  "humanRecordsUnchanged": true,
+  "enabledCameraCount": 0,
+  "backendHash": "23fb897307d7cd48170611623ca7c7d07c7aa241365a1372594b1ad99dce8fc3",
+  "detectorHash": "51240ae7a423f9d7a1104122511f8523facf597d189229387f1436ce6eadd1ff",
+  "gatewayHash": "fb0fcaff3a30ca415f80917f46acebe3ca9a70148b78b13ecb6d531b505ca070",
+  "ready": {
+    "status": "UP",
+    "messaging": "UP",
+    "database": "UP"
+  },
+  "frames": [
+    {
+      "camera": 21,
+      "enabled": false,
+      "taskState": "STOPPED",
+      "frameState": "DISABLED"
+    },
+    {
+      "camera": 22,
+      "enabled": false,
+      "taskState": "STOPPED",
+      "frameState": "DISABLED"
+    }
+  ],
+  "anonymousFrameDenied": true,
+  "migrationPresent": true,
+  "managedServices": [
+    "backend",
+    "demo_stream",
+    "detector",
+    "flask",
+    "user_stream"
+  ],
+  "mediaWriteQueue": 8192,
+  "mqttHealthy": true
+}

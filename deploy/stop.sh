@@ -7,26 +7,13 @@ RUNTIME_DIR="$PROJECT_DIR/workspace/runtime"
 PID_DIR="$RUNTIME_DIR/pids"
 
 stop_process() {
-  local name="$1"
-  local pidfile="$PID_DIR/$name.pid"
-  if [[ ! -f "$pidfile" ]]; then
-    echo "$name 没有 PID 文件，跳过"
-    return
-  fi
-  local pid
-  pid="$(<"$pidfile")"
-  if kill -0 "$pid" 2>/dev/null; then
-    kill "$pid"
-    for _ in {1..40}; do
-      kill -0 "$pid" 2>/dev/null || break
-      sleep 0.25
-    done
-  fi
-  unlink "$pidfile" 2>/dev/null || true
-  echo "$name 已停止"
+  python3 "$DEPLOY_DIR/stop_managed.py" "$1"
 }
 
+stop_process guardian
 stop_process detector
+stop_process user_stream
+stop_process demo_stream
 stop_process frontend
 stop_process flask
 stop_process backend
@@ -45,5 +32,14 @@ if "$MYSQL_BASE_VALUE/bin/mysqladmin" --protocol=socket --socket="$MYSQL_SOCKET"
   echo "mysql 已停止"
 fi
 
-docker compose -f "$DEPLOY_DIR/compose.yaml" stop
+if [[ -f "$DEPLOY_DIR/.env.p0" ]]; then
+  set -a
+  source "$DEPLOY_DIR/.env.p0"
+  set +a
+  COMPOSE_FILES=(-f "$DEPLOY_DIR/compose.yaml")
+  [[ -z "${MQTT_CA_FILE:-}" ]] || COMPOSE_FILES+=(-f "$DEPLOY_DIR/compose.p0-tls.yaml")
+  docker compose "${COMPOSE_FILES[@]}" stop
+else
+  docker stop railway-emqx railway-mediamtx
+fi
 echo "所有托管服务已停止；Docker 数据卷和 MySQL 数据均保留。"

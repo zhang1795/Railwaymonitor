@@ -1,0 +1,10 @@
+{
+  "configuredQueue": 8192,
+  "imageUnchanged": true,
+  "intentPreserved": true,
+  "localPublishersSupervised": [
+    "demo_stream",
+    "user_stream"
+  ],
+  "relayAndPublishersRestartSeconds": 4.487
+}

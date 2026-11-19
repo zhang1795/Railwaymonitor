@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: unread alerts are visible on first login and a later lower ID is detected too
+ok 1 - unread alerts are visible on first login and a later lower ID is detected too
+  ---
+  duration_ms: 163.920711
+  type: 'test'
+  ...
+# Subtest: disconnection marks the count unknown and reconnect polling recovers all server unread items
+ok 2 - disconnection marks the count unknown and reconnect polling recovers all server unread items
+  ---
+  duration_ms: 21.625784
+  type: 'test'
+  ...
+# Subtest: read acknowledges explicit displayed IDs without consuming an arrival during the request
+ok 3 - read acknowledges explicit displayed IDs without consuming an arrival during the request
+  ---
+  duration_ms: 21.187238
+  type: 'test'
+  ...
+# Subtest: a failed read request does not optimistically erase unread alerts
+ok 4 - a failed read request does not optimistically erase unread alerts
+  ---
+  duration_ms: 17.679978
+  type: 'test'
+  ...
+# Subtest: slow polling is serialized, expires, and responses from a previous login cannot leak
+ok 5 - slow polling is serialized, expires, and responses from a previous login cannot leak
+  ---
+  duration_ms: 17.490438
+  type: 'test'
+  ...
+# Subtest: notification polling preserves an open edit draft and does not replace the event table
+ok 6 - notification polling preserves an open edit draft and does not replace the event table
+  ---
+  duration_ms: 84.903917
+  type: 'test'
+  ...
+# Subtest: a notice link opens the exact event and acknowledges only that successful detail
+ok 7 - a notice link opens the exact event and acknowledges only that successful detail
+  ---
+  duration_ms: 78.878253
+  type: 'test'
+  ...
+# Subtest: late detail responses after navigation never mark an event read
+ok 8 - late detail responses after navigation never mark an event read
+  ---
+  duration_ms: 63.546213
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 475.424884

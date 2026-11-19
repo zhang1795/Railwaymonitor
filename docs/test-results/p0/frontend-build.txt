@@ -1,0 +1,6 @@
+dist/assets/index-CW9ej40T.js                         12.20 kB │ gzip:   4.09 kB
+dist/assets/index-DGGcEzLP.js                         12.80 kB │ gzip:   4.98 kB
+dist/assets/index-DKCTea8F.js                         15.16 kB │ gzip:   4.73 kB
+dist/assets/statistics-DTXPM0b2.js                 1,036.52 kB │ gzip: 343.51 kB
+dist/assets/index-DAd0Odsr.js                      1,179.36 kB │ gzip: 381.28 kB
+✓ built in 11.61s

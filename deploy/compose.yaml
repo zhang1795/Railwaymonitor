@@ -8,11 +8,15 @@ services:
     restart: unless-stopped
     environment:
       EMQX_NODE_NAME: emqx@node1.emqx.local
+      EMQX_NODE__COOKIE: ${RAILWAY_EMQX_COOKIE:?configure random node cookie}
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${EMQX_DASHBOARD_PASSWORD:?configure .env.p0}
     ports:
-      - "1883:1883"
-      - "8083:8083"
+      - "127.0.0.1:1883:1883"
+      - "127.0.0.1:8883:8883"
       - "127.0.0.1:18083:18083"
     volumes:
+      - ../workspace/runtime/emqx-p0/base.conf:/opt/emqx/etc/emqx.conf:ro
+      - ../workspace/runtime/emqx-p0/acl.conf:/opt/emqx/etc/railway-acl.conf:ro
       - railway_emqx_data:/opt/emqx/data
       - railway_emqx_log:/opt/emqx/log
     healthcheck:
@@ -25,12 +29,19 @@ services:
     image: bluenviron/mediamtx:1.18.2
     container_name: railway-mediamtx
     restart: unless-stopped
+    environment:
+      # 4K sample IDRs are about 1 MiB; the default queue lost fragments.
+      MTX_WRITEQUEUESIZE: ${MEDIA_WRITE_QUEUE_SIZE:-8192}
     ports:
-      - "8554:8554"
-      - "8888:8888"
-      - "8889:8889"
-      - "8189:8189/udp"
+      - "127.0.0.1:8554:8554"
+      - "127.0.0.1:8888:8888"
+      - "127.0.0.1:8889:8889"
+      - "127.0.0.1:8189:8189/udp"
 
 volumes:
   railway_emqx_data:
   railway_emqx_log:
+
+networks:
+  default:
+    name: ${RAILWAY_DOCKER_NETWORK:-railway-monitoring-p0}

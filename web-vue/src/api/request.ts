@@ -9,21 +9,29 @@ const instance: AxiosInstance = axios.create({
   timeout: 10000,
 })
 
-// 请求拦截器
-instance.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
+let csrf: { headerName:string; token:string } | undefined
+let csrfPending: Promise<void> | undefined
+export function resetCsrf() { csrf = undefined; csrfPending = undefined }
+async function ensureCsrf() {
+  if (csrf) return
+  if (!csrfPending) csrfPending = instance.get('/auth/csrf').then((data:any) => { csrf=data }).finally(() => {csrfPending=undefined})
+  await csrfPending
+}
+instance.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  const method = (config.method || 'get').toLowerCase()
+  if (!['get','head','options'].includes(method)) {
+    await ensureCsrf()
+    if (csrf) config.headers.set(csrf.headerName, csrf.token)
   }
-)
+  return config
+})
 
 // 响应拦截器
 instance.interceptors.response.use(
   (response: AxiosResponse) => {
     const { code, msg, data } = response.data
 
+    if (response.config.url === '/user/login' || response.config.url === '/user/logout') resetCsrf()
     // 请求成功
     if (code === 200 || code === 0) {
       return data
@@ -59,6 +67,7 @@ instance.interceptors.response.use(
           window.location.href = '/login'
           break
         case 403:
+          resetCsrf()
           message = '没有权限访问该资源'
           break
         case 404:

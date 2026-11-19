@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: preview authenticates before queued commands and renews through authenticated HTTP
+ok 1 - preview authenticates before queued commands and renews through authenticated HTTP
+  ---
+  duration_ms: 129.868102
+  type: 'test'
+  ...
+# Subtest: unauthenticated preview command queue is bounded
+ok 2 - unauthenticated preview command queue is bounded
+  ---
+  duration_ms: 40.233406
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 181.195503

@@ -1,0 +1,13 @@
+{
+  "anonymousDenied": true,
+  "badPasswordDenied": true,
+  "forgedAckDenied": true,
+  "forgedControlDenied": true,
+  "crossWorkerPublishDenied": true,
+  "untrustedCertificateDenied": true,
+  "backendWorkerPublishDenied": true,
+  "crossWorkerSubscribeDenied": true,
+  "wildcardSubscribeDenied": true,
+  "clientIdImpersonationDenied": true,
+  "trustedCaWrongHostnameDenied": true
+}

@@ -1,0 +1,13 @@
+{
+  "realChromium": true,
+  "isolatedServices": true,
+  "liveFrameAndTargetsVisible": true,
+  "liveBoxes": 1,
+  "actualVideoFrameCallback": true,
+  "seekFrameSeq": 62,
+  "seekOffsetMs": 15524,
+  "seekOverlayCount": 1,
+  "overlayToggle": true,
+  "horizontalOverflow768": 0,
+  "uncaughtExceptions": 0
+}

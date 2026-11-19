@@ -1,0 +1,5 @@
+[INFO] Tests run: 55, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 26.21 s -- in com.example.P0IntegrationTest
+[INFO] Tests run: 55, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+[INFO] Total time:  34.537 s
+[INFO] Finished at: 2026-11-10T20:36:04+08:00

@@ -1,0 +1,33 @@
+backend-h2-expanded-before-fix.log:
+[WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.018 s -- in com.example.P0MqttIntegrationTest
+[ERROR] Tests run: 43, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 23.15 s <<< FAILURE! -- in com.example.P0IntegrationTest
+org.opentest4j.AssertionFailedError: timestamp below SQL range ==> expected: <REJECTED> but was: <APPLIED>
+org.opentest4j.AssertionFailedError: timezone conversion below SQL range ==> expected: <REJECTED> but was: <APPLIED>
+[ERROR]   P0IntegrationTest.malformedSnapshotsAreDurablyRejected:235 timestamp below SQL range ==> expected: <REJECTED> but was: <APPLIED>
+[ERROR]   P0IntegrationTest.malformedSnapshotsAreDurablyRejected:235 timezone conversion below SQL range ==> expected: <REJECTED> but was: <APPLIED>
+[ERROR] Tests run: 44, Failures: 2, Errors: 0, Skipped: 1
+backend-h2-manual-race-reproduction.log:
+[ERROR] Tests run: 3, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 16.29 s <<< FAILURE! -- in com.example.P0IntegrationTest
+org.opentest4j.AssertionFailedError: handle restored a stale automatic state ==> expected: <ENDED> but was: <ACTIVE>
+org.opentest4j.AssertionFailedError: edit restored a stale automatic state ==> expected: <ENDED> but was: <ACTIVE>
+org.opentest4j.AssertionFailedError: status restored a stale automatic state ==> expected: <ENDED> but was: <ACTIVE>
+[ERROR]   P0IntegrationTest.manualChangesCannotRestoreStaleAutomaticDetectionFields:323 handle restored a stale automatic state ==> expected: <ENDED> but was: <ACTIVE>
+[ERROR]   P0IntegrationTest.manualChangesCannotRestoreStaleAutomaticDetectionFields:323 edit restored a stale automatic state ==> expected: <ENDED> but was: <ACTIVE>
+[ERROR]   P0IntegrationTest.manualChangesCannotRestoreStaleAutomaticDetectionFields:323 status restored a stale automatic state ==> expected: <ENDED> but was: <ACTIVE>
+[ERROR] Tests run: 3, Failures: 3, Errors: 0, Skipped: 0
+backend-mysql-before-fix.log:
+[ERROR] Tests run: 47, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 34.71 s <<< FAILURE! -- in com.example.P0IntegrationTest
+org.opentest4j.AssertionFailedError: timestamp below SQL range ==> expected: <REJECTED> but was: <APPLIED>
+org.opentest4j.AssertionFailedError: timezone conversion below SQL range ==> expected: <REJECTED> but was: <APPLIED>
+org.opentest4j.AssertionFailedError: handle restored a stale automatic state ==> expected: <ENDED> but was: <ACTIVE>
+org.opentest4j.AssertionFailedError: edit restored a stale automatic state ==> expected: <ENDED> but was: <ACTIVE>
+org.opentest4j.AssertionFailedError: status restored a stale automatic state ==> expected: <ENDED> but was: <ACTIVE>
+[ERROR]   P0IntegrationTest.malformedSnapshotsAreDurablyRejected:237 timestamp below SQL range ==> expected: <REJECTED> but was: <APPLIED>
+[ERROR]   P0IntegrationTest.malformedSnapshotsAreDurablyRejected:237 timezone conversion below SQL range ==> expected: <REJECTED> but was: <APPLIED>
+[ERROR]   P0IntegrationTest.manualChangesCannotRestoreStaleAutomaticDetectionFields:323 handle restored a stale automatic state ==> expected: <ENDED> but was: <ACTIVE>
+[ERROR]   P0IntegrationTest.manualChangesCannotRestoreStaleAutomaticDetectionFields:323 edit restored a stale automatic state ==> expected: <ENDED> but was: <ACTIVE>
+[ERROR]   P0IntegrationTest.manualChangesCannotRestoreStaleAutomaticDetectionFields:323 status restored a stale automatic state ==> expected: <ENDED> but was: <ACTIVE>
+[ERROR] Tests run: 47, Failures: 5, Errors: 0, Skipped: 0
+offline-font-before-fix.log:
+AssertionError: font download forbidden
+FAILED (failures=1)

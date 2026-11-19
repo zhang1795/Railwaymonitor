@@ -10,6 +10,10 @@ import lombok.Data;
  */
 @Data
 public class UserRegisterDTO {
+    @jakarta.validation.constraints.Min(0) @jakarta.validation.constraints.Max(1)
+    private Integer role;
+    @jakarta.validation.constraints.Min(0) @jakarta.validation.constraints.Max(1)
+    private Integer status;
     /**
      * 用户名
      */
@@ -20,6 +24,7 @@ public class UserRegisterDTO {
      * 密码
      */
     @NotBlank(message = "密码不能为空")
+    @lombok.ToString.Exclude
     private String password;
 
     /**

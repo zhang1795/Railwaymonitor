@@ -205,7 +205,7 @@ const rules = {
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度应在6-20个字符之间', trigger: 'blur' }
+    { min: 12, max: 64, message: '密码至少12个字符', trigger: 'blur' }
   ],
   realName: [
     { required: true, message: '请输入真实姓名', trigger: 'blur' }
@@ -254,8 +254,8 @@ const handleResetPassword = (row: UserInfo) => {
     type: 'warning',
   })
     .then(async () => {
-      await resetPassword(row.id)
-      ElMessage.success('重置成功')
+      const result = await resetPassword(row.id)
+      await ElMessageBox.alert('临时口令（仅显示本次）：' + result.temporaryPassword, '请安全交付给用户，首次登录必须修改')
     })
     .catch(() => {})
 }

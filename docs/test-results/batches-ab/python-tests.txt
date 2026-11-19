@@ -1,0 +1,74 @@
+test_hung_read_is_bounded_and_process_reaped (test_capture.CaptureTests) ... ok
+test_real_video_read_and_eof (test_capture.CaptureTests) ... ok
+test_startup_timeout_reaps_child (test_capture.CaptureTests) ... ok
+test_stop_interrupts_waiting_read (test_capture.CaptureTests) ... ok
+/data/zxy/RailwayProject/workspace/Railwaymonitor/RailwayDetector/utils/general.py:27: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+  import pkg_resources as pkg
+/data/zxy/RailwayProject/workspace/Railwaymonitor/workspace/runtime/detector-env/lib/python3.8/site-packages/pkg_resources/__init__.py:3154: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('mpl_toolkits')`.
+Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+  declare_namespace(pkg)
+test_mixed_shapes_are_serialized (test_detector.DetectorTests) ... ok
+test_one_forward_nms_and_update_per_frame_including_empty (test_detector.DetectorTests) ... ok
+test_padding_box_is_removed_after_coordinate_restoration (test_detector.DetectorTests) ... ok
+test_scores_keep_precision (test_detector.DetectorTests) ... ok
+test_waiting_inference_can_be_cancelled (test_detector.DetectorTests) ... ok
+test_file_time_is_independent_of_processing_time (test_frame_clock.ClockTests) ... ok
+test_invalid_pts_uses_frame_index_and_fps (test_frame_clock.ClockTests) ... ok
+test_live_uses_received_time (test_frame_clock.ClockTests) ... ok
+test_timezone_and_midnight (test_frame_clock.ClockTests) ... ok
+test_connection_failure_can_retry (test_publisher.PublisherTests) ... ok
+test_connects_once_under_concurrent_send (test_publisher.PublisherTests) ... ok
+test_disconnect_wait_is_bounded_and_reconnect_recovers (test_publisher.PublisherTests) ... ok
+test_publish_failure_is_visible (test_publisher.PublisherTests) ... ok
+test_status_delivery_never_waits_for_offline_connection (test_publisher.PublisherTests) ... ok
+test_all_holders_receive_correlated_terminal_status (test_tasks.TaskTests) ... ok
+test_concurrent_duplicate_start_has_one_worker (test_tasks.TaskTests) ... ok
+test_expiry_and_heartbeat (test_tasks.TaskTests) ... ok
+test_fast_terminal_status_correlates_with_start_before_ack (test_tasks.TaskTests) ... ok
+test_legacy_request_can_restart_after_failure (test_tasks.TaskTests) ... ok
+test_new_protocol_cannot_create_an_unleased_legacy_owner (test_tasks.TaskTests) ... ok
+test_owner_reference_count_and_stale_stop (test_tasks.TaskTests) ... ok
+test_reaper_closes_cleanly (test_tasks.TaskTests) ... ok
+test_request_replay_does_not_restart_completed_task (test_tasks.TaskTests) ... ok
+test_status_network_failure_does_not_prevent_cleanup (test_tasks.TaskTests) ... ok
+test_terminal_revision_is_newer_than_stop (test_tasks.TaskTests) ... ok
+test_url_conflict_limit_and_input_validation (test_tasks.TaskTests) ... ok
+test_class_and_score_update_together (test_tracking.TrackingTests) ... ok
+test_confirmation_counts_initial_observation (test_tracking.TrackingTests) ... ok
+test_confirmed_track_recovers_without_reconfirmation (test_tracking.TrackingTests) ... ok
+test_empty_frames_age_and_expire (test_tracking.TrackingTests) ... ok
+test_invalid_boxes_filtered_individually (test_tracking.TrackingTests) ... ok
+test_legacy_empty_shapes_and_input_validation (test_tracking.TrackingTests) ... ok
+test_legacy_imports_share_implementation (test_tracking.TrackingTests) ... ok
+test_nonfinite_predictions_do_not_shift_tracker_indices (test_tracking.TrackingTests) ... ok
+test_scores_follow_match_when_order_changes_and_subset_confirms (test_tracking.TrackingTests) ... ok
+test_unconfirmed_track_requires_consecutive_hits (test_tracking.TrackingTests) ... ok
+test_encode_write_and_publish_failures_release_resources (test_worker.WorkerTests) ... Camera test session 0bac98047688440593de8b82cf1dec22
+Camera test session 726857e1f52f441f9df325db876aafd4
+Camera test session 73b7cbba726e403da600bbe258a2d683
+ok
+test_import_does_not_connect_network_or_load_weights (test_worker.WorkerTests) ... ok
+test_inference_exception_releases_and_task_can_restart (test_worker.WorkerTests) ... Camera test session 665af31d72c94ac4aaeeff62e5a0eb5b
+Camera test session 9eb2ed4e707d4e43a91a65f0081e5f66
+ok
+test_main_loop_updates_empty_frames_and_preserves_attributes (test_worker.WorkerTests) ... Camera test session 525c6d73878046ae915922a76da9ce53
+ok
+test_pending_confirmed_tail_is_closed_on_stop (test_worker.WorkerTests) ... Camera test session 9ba52a264ad9492ab24a8dc144047de9
+ok
+test_time_uses_media_not_processing_wall_clock (test_worker.WorkerTests) ... Camera test session c7971f2e908c45d7baf46f88a7be4bc9
+ok
+test_unexpected_live_eof_is_failure_not_success (test_worker.WorkerTests) ... Camera test session 4604005c53f545f3af8c800a848e001b
+ok
+test_video_open_failure_releases_capture (test_worker.WorkerTests) ... Camera test session 092084a3ebbc4d0594980525d0b6261a
+ok
+test_writer_open_failure_releases_both_resources (test_worker.WorkerTests) ... Camera test session 81bdae8370e44b478d9bb0516a3b9e81
+ok
+
+----------------------------------------------------------------------
+Ran 49 tests in 3.183s
+
+OK
+save_num: 50
+(64, 48)
+save_num: 50
+(64, 48)

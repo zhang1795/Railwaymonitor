@@ -7,6 +7,7 @@ import lombok.Data;
  */
 @Data
 public class UserLoginVO {
+    private Boolean passwordChangeRequired;
     /**
      * 用户ID
      */

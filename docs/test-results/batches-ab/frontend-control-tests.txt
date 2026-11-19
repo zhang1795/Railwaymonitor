@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: start is idempotent and uses timezone-aware v2 control
+ok 1 - start is idempotent and uses timezone-aware v2 control
+  ---
+  duration_ms: 6.260292
+  type: 'test'
+  ...
+# Subtest: unacknowledged start retries; running lease sends heartbeat
+ok 2 - unacknowledged start retries; running lease sends heartbeat
+  ---
+  duration_ms: 0.813336
+  type: 'test'
+  ...
+# Subtest: out of order and foreign client status do not regress state
+ok 3 - out of order and foreign client status do not regress state
+  ---
+  duration_ms: 1.282657
+  type: 'test'
+  ...
+# Subtest: stop before start acknowledgement releases the late session
+ok 4 - stop before start acknowledgement releases the late session
+  ---
+  duration_ms: 0.55122
+  type: 'test'
+  ...
+# Subtest: rapid stop and restart ignores terminal messages from the old session
+ok 5 - rapid stop and restart ignores terminal messages from the old session
+  ---
+  duration_ms: 0.444616
+  type: 'test'
+  ...
+# Subtest: backend restart or expired lease starts a fresh session
+ok 6 - backend restart or expired lease starts a fresh session
+  ---
+  duration_ms: 0.531739
+  type: 'test'
+  ...
+# Subtest: failure stops automatic retries; explicit retry gets new request
+ok 7 - failure stops automatic retries; explicit retry gets new request
+  ---
+  duration_ms: 0.56233
+  type: 'test'
+  ...
+# Subtest: dispose releases all held cameras and removes handler
+ok 8 - dispose releases all held cameras and removes handler
+  ---
+  duration_ms: 0.46448
+  type: 'test'
+  ...
+# Subtest: fast failure delivered before STARTING ack cannot be overwritten
+ok 9 - fast failure delivered before STARTING ack cannot be overwritten
+  ---
+  duration_ms: 0.696913
+  type: 'test'
+  ...
+# Subtest: MQTT preserves subscriptions across initial connect and reconnect
+ok 10 - MQTT preserves subscriptions across initial connect and reconnect
+  ---
+  duration_ms: 42.816283
+  type: 'test'
+  ...
+# Subtest: MQTT status messages do not require detection result fields
+ok 11 - MQTT status messages do not require detection result fields
+  ---
+  duration_ms: 21.953034
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 97.115612

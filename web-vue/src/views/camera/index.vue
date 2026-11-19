@@ -31,7 +31,7 @@
       </el-form-item>
       <el-form-item label="设备状态">
         <el-select v-model="queryParams.status" placeholder="请选择设备状态" clearable class="status-select">
-          <el-option v-for="status in [0, 1, 2]" :key="status" :label="formatDeviceStatus(status)" :value="status" />
+          <el-option v-for="status in [0, 1, 2, 3]" :key="status" :label="formatDeviceStatus(status)" :value="status" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -86,7 +86,22 @@
           {{ formatDateTime(row.createTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="150" align="center" fixed="right">
+      <el-table-column label="后台检测" min-width="260">
+        <template #default="{ row }">
+          <MonitoringStatus :row="monitorRows[row.id]" :healthy="monitorHealthy" :label="monitoring.label(row.id)" :report-at="monitoring.reportAt(row.id)" />
+          <el-button link :type="monitorRows[row.id]?.enabled ? 'danger' : 'primary'" :disabled="!monitorLoaded" :loading="changingMonitoring.has(row.id)" @click="changeMonitoring(row.id)">
+            {{ monitorRows[row.id]?.enabled ? '停用后台检测' : '启用后台检测' }}
+          </el-button>
+        </template>
+      </el-table-column>
+      <el-table-column label="风险判定" min-width="170">
+        <template #default="{row}">
+          <el-tooltip :content="row.riskRule ? ruleSummary(row.riskRule) : '暂未取得规则'" placement="top">
+            <el-tag :type="row.riskRule?.enabled ? 'success' : 'info'">{{modeLabel(row.riskRule)}}</el-tag>
+          </el-tooltip>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="230" align="center" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" @click="handleUpdate(row)">
             <el-icon>
@@ -94,6 +109,7 @@
             </el-icon>
             编辑
           </el-button>
+          <el-button link type="primary" @click="ruleCameraId=row.id;ruleVisible=true">风险规则</el-button>
           <el-button link type="danger" @click="handleDelete(row)">
             <el-icon>
               <Delete />
@@ -109,6 +125,7 @@
       @change="getList" />
 
     <!-- 新增/编辑对话框 -->
+    <RiskRuleDialog v-model="ruleVisible" :camera-id="ruleCameraId" :running="monitorRows[ruleCameraId]?.enabled" :stopping="changingMonitoring.has(ruleCameraId)" @saved="getList" @stop="stopRuleCamera" />
     <el-dialog v-model="dialogVisible" :title="dialogType === 'create' ? '新增摄像头' : '编辑摄像头'" width="600px"
       @close="resetForm">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
@@ -120,7 +137,9 @@
           <el-input v-model="form.location" placeholder="请输入安装位置" />
         </el-form-item>
 
-        <!-- 经纬度区域：仅保留选择按钮和已选坐标提示 -->
+        <el-form-item label="经度"><el-input v-model="form.longitude" placeholder="-180 至 180，经度在前" /></el-form-item>
+        <el-form-item label="纬度"><el-input v-model="form.latitude" placeholder="-90 至 90，纬度在后" /></el-form-item>
+        <el-form-item><small>使用高德 GCJ-02 坐标。地图不可用时可手工填写经纬度；请先转换其他坐标系，不会自动填入 (0,0)。</small></el-form-item>
         <template v-if="dialogType === 'create'">
           <el-form-item>
             <el-button type="primary" @click="openMapDialog">在地图上选择位置</el-button>
@@ -130,13 +149,6 @@
           </el-form-item>
         </template>
 
-        <template v-if="dialogType === 'update'">
-          <el-form-item label="坐标信息">
-            <div class="coordinate-info">
-              {{ form.longitude }}, {{ form.latitude }}
-            </div>
-          </el-form-item>
-        </template>
 
         <el-form-item label="IP地址" prop="ipAddress">
           <el-input v-model="form.ipAddress" placeholder="请输入IP地址" />
@@ -146,7 +158,7 @@
         </el-form-item>
         <el-form-item v-if="dialogType === 'update'" label="设备状态" prop="status">
           <el-select v-model="form.status" placeholder="请选择设备状态">
-            <el-option v-for="status in [0, 1, 2]" :key="status" :label="formatDeviceStatus(status)" :value="status" />
+            <el-option v-for="status in [0, 1, 2, 3]" :key="status" :label="formatDeviceStatus(status)" :value="status" />
           </el-select>
         </el-form-item>
         <el-form-item v-if="dialogType === 'update' && form.status === 2" label="故障类型" prop="faultType">
@@ -189,6 +201,22 @@ import Pagination from '@/components/Pagination/index.vue'
 import MapComponent from '@/components/Map/index.vue' // 引入地图组件
 import wsClient from '@/utils/websocket'
 import type { WebSocketMessage } from '@/utils/websocket'
+import { useMonitoring } from '@/composables/useMonitoring'
+import MonitoringStatus from '@/components/MonitoringStatus/index.vue'
+import RiskRuleDialog from '@/components/RiskRuleDialog/index.vue'
+import {modeLabel,ruleSummary} from '@/utils/ruleSummary'
+async function stopRuleCamera(camera:number){try{await monitoring.change(camera,false)}catch{}}
+const ruleVisible=ref(false),ruleCameraId=ref(0)
+
+const monitoring = useMonitoring()
+const { rows:monitorRows, loaded:monitorLoaded, healthy:monitorHealthy, changing:changingMonitoring } = monitoring
+const changeMonitoring = async (id:number) => {
+  try {
+    const enabled=!monitorRows.value[id]?.enabled
+    await monitoring.change(id,enabled)
+    ElMessage.success(enabled?'已启用后台检测':'已请求停用后台检测')
+  } catch { /* The request layer displays the actual error. */ }
+}
 
 // 查询参数
 const queryParams = reactive({
@@ -247,10 +275,10 @@ const rules: FormRules = {
     },
   ],
   rtspUrl: [
-    { required: true, message: '请输入RTSP地址', trigger: 'blur' },
+
     {
       validator: (rule: any, value: string, callback: any) => {
-        if (!validateRTSP(value)) {
+        if ((dialogType.value === 'create' || value) && !validateRTSP(value)) {
           callback(new Error('请输入正确的RTSP地址'))
         } else {
           callback()
@@ -315,11 +343,11 @@ const handleCreate = () => {
 // 编辑摄像头（回显longitude/latitude）
 const handleUpdate = (row: Camera) => {
   dialogType.value = 'update'
-  Object.assign(form, row)
+  Object.assign(form, row, {rtspUrl:''})
 
   // 经纬度回显（保留6位小数）
-  form.longitude = row.longitude ? row.longitude.toFixed(6) : ''
-  form.latitude = row.latitude ? row.latitude.toFixed(6) : ''
+  form.longitude = row.longitude!=null ? row.longitude.toFixed(6) : ''
+  form.latitude = row.latitude!=null ? row.latitude.toFixed(6) : ''
   dialogVisible.value = true
 }
 
@@ -356,9 +384,11 @@ const resetForm = () => {
 
 // 提交表单（仅保留基础非空判断，无复杂验证）
 const submitForm = async () => {
-  // 新增时仅简单判断经纬度非空
-  if (dialogType.value === 'create' && (!form.longitude || !form.latitude)) {
-    ElMessage.error('请在地图上选择安装位置')
+  if(submitLoading.value)return
+  const longitude=String(form.longitude).trim(),latitude=String(form.latitude).trim()
+  const unspecified=dialogType.value==='update' && !longitude && !latitude
+  if (!unspecified && (!longitude || !latitude || !Number.isFinite(Number(longitude)) || !Number.isFinite(Number(latitude)) || Math.abs(Number(longitude))>180 || Math.abs(Number(latitude))>90)) {
+    ElMessage.error('请手工填写有效经纬度，或在地图上选择安装位置')
     return
   }
 
@@ -374,12 +404,12 @@ const submitForm = async () => {
     // 提交数据：转换经纬度为数字
     const submitData = {
       ...form,
-      longitude: Number(form.longitude),
-      latitude: Number(form.latitude),
+      longitude: unspecified ? undefined : Number(longitude),
+      latitude: unspecified ? undefined : Number(latitude),
     }
 
     if (dialogType.value === 'create') {
-      await createCamera(submitData)
+      await createCamera({...submitData,longitude:Number(longitude),latitude:Number(latitude)})
       ElMessage.success('新增成功')
     } else {
       await updateCamera(submitData)
@@ -557,17 +587,15 @@ const handleReset = () => {
 // 生命周期（原逻辑保留）
 onMounted(() => {
   getList()
+  wsClient.addMessageHandler(handleWebSocketMessage)
   if (!wsClient.isConnected()) {
-    wsClient.addMessageHandler(handleWebSocketMessage)
     wsClient.connect()
   }
 })
 
 onBeforeUnmount(() => {
   wsClient.removeMessageHandler(handleWebSocketMessage)
-  if (wsClient.isConnected()) {
-    wsClient.close()
-  }
+  wsClient.close()
 })
 </script>
 

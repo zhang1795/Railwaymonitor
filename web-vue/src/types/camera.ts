@@ -1,12 +1,13 @@
 // 摄像头设备
 export interface Camera {
+  riskRule?: import('@/api/riskRules').RiskRule
   id: number
   name: string
   location: string
   longitude: number  // 新增字段
   latitude: number   // 新增字段
   ipAddress: string
-  rtspUrl: string
+  rtspUrl?: string
   status: number
   AbnormalDetected?: boolean
   streaming?: boolean
@@ -44,7 +45,7 @@ export interface CameraCreateParams {
   name: string
   location: string
   ipAddress: string
-  rtspUrl: string
+  rtspUrl?: string
   longitude: number  // 新增字段
   latitude: number   // 新增字段
 }
@@ -55,7 +56,7 @@ export interface CameraUpdateParams {
   name: string
   location: string
   ipAddress: string
-  rtspUrl: string
+  rtspUrl?: string
   status?: number
   longitude?: number  // 新增字段
   latitude?: number   // 新增字段

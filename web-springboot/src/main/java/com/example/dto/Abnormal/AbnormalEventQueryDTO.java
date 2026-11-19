@@ -13,6 +13,7 @@ import com.example.dto.PageDTO;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class AbnormalEventQueryDTO extends PageDTO {
+    private Boolean unreadOnly;
     /**
      * 关联摄像头ID
      */
@@ -47,4 +48,4 @@ public class AbnormalEventQueryDTO extends PageDTO {
      * 结束时间
      */
     private LocalDateTime endTime;
-} 
+}

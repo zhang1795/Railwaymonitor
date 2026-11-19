@@ -1,0 +1,11 @@
+{
+  "backendHealthy": true,
+  "sameDetectorProcess": true,
+  "monitoringIntentPreserved": true,
+  "enabledMonitoringRecovered": true,
+  "originalSessionPreserved": false,
+  "newSessionAfterLeaseExpiry": true,
+  "pendingNow": 0,
+  "historicalAlarmsPreserved": 84,
+  "knownInterruptionDuringUpgrade": true
+}

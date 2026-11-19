@@ -1,0 +1,20 @@
+{
+  "camera": 22,
+  "enabledCameras": [
+    22
+  ],
+  "twoLiveViewers": true,
+  "viewerIsolation": true,
+  "realInferenceVerified": true,
+  "statisticsOrdered": true,
+  "unknownHistoryPreserved": true,
+  "externalChannelsUnconfigured": true,
+  "sourceVideoRange": true,
+  "anonymousVideoDenied": true,
+  "retentionDays": 30,
+  "budgetBytes": 2000000000000,
+  "frameCounts": [
+    2,
+    7
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "processedInputReads": 197,
+  "decodedFrames": 1535,
+  "droppedForFreshness": 1338,
+  "decodeErrors": 0,
+  "checked": true,
+  "elapsedSeconds": 65.296,
+  "maxRelativeDecoderLagMs": 42.707,
+  "lastRelativeDecoderLagMs": 0.0,
+  "samples": 50,
+  "maxReferenceMae": 0.0,
+  "minReferenceMae": 0.0
+}

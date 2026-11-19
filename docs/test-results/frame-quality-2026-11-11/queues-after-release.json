@@ -1,0 +1,14 @@
+{
+  "events": {
+    "pending": 0,
+    "failedOrRejected": 0
+  },
+  "evidence": {
+    "pending": 0,
+    "failedOrRejected": 0
+  },
+  "recordings": {
+    "pending": 0,
+    "failedOrRejected": 0
+  }
+}

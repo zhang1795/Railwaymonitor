@@ -1,0 +1,4 @@
+import request from './request'
+export interface MonitoringState { camera_id:number; enabled:boolean; state:string; error?:string; session_id:string; pending_events:number; last_status_at?:string|null; metricsReportedAt?:string; metrics?: {lastFrameAt?:string;lastInferenceAt?:string;effectiveFps?:number;sourceFps?:number;frameAgeMs?:number;processingP95Ms?:number;inferenceWaitMs?:number;decodedFrames?:number;skippedFrames?:number;recordingState?:string;sourceRecordingState?:string;recordingPending?:number;recordingFailed?:number;sourceQuality?:string;decodeErrors?:number;decoderRelativeLagMs?:number;liveResultState?:string;liveResultDropped?:number;analysisRecordingState?:string;analysisDroppedSamples?:number} }
+export const getMonitoring = () => request.get<MonitoringState[]>('/monitoring', { silent:true } as any)
+export const setMonitoring = (cameraId:number, enabled:boolean) => request.put<MonitoringState>(`/monitoring/${cameraId}`, {enabled})

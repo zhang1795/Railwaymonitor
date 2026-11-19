@@ -63,5 +63,6 @@ public interface UserService extends IService<User> {
      *
      * @param userId 用户ID
      */
-    void resetPassword(Long userId);
+    String resetPassword(Long userId);
+    void deleteUser(Long id);
 } 

@@ -1,0 +1,26 @@
+{
+  "python": {
+    "passed": 85,
+    "sourceLog": "python-all-final.log"
+  },
+  "flask": {
+    "passed": 5,
+    "sourceLog": "flask-all-final.log"
+  },
+  "deploy": {
+    "passed": 13,
+    "sourceLog": "deploy-all-final.log"
+  },
+  "frontend": {
+    "passed": 55,
+    "sourceLog": "frontend-all-final.log"
+  },
+  "h2": {
+    "passed": 95,
+    "sourceLog": "backend-h2-final.log"
+  },
+  "mysqlTls": {
+    "passed": 96,
+    "sourceLog": "backend-mysql-tls-final.log"
+  }
+}

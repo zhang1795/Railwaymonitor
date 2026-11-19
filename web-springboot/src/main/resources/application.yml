@@ -1,9 +1,21 @@
 server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
   port: ${SERVER_PORT:8080}
   servlet:
     context-path: /api
+    session:
+      timeout: 20m
+      cookie:
+        http-only: true
+        same-site: strict
+        secure: ${SESSION_COOKIE_SECURE:true}
+        path: /
 
 spring:
+  task:
+    scheduling:
+      pool:
+        size: 4
   application:
     name: railway-monitoring
   datasource:
@@ -11,6 +23,11 @@ spring:
     url: "${DB_URL:jdbc:mysql://127.0.0.1:3307/railway_monitoring?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai}"
     username: ${DB_USERNAME:root}
     password: "${DB_PASSWORD:}"
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:16}
+      minimum-idle: 2
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:3000}
+      validation-timeout: 1000
   servlet:
     multipart:
       max-file-size: 10MB
@@ -22,7 +39,7 @@ spring:
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
   global-config:
     db-config:
       id-type: auto
@@ -32,7 +49,7 @@ mybatis-plus:
 
 logging:
   level:
-    com.example: debug
+    com.example: info
     org.springframework: warn
 
 # Swagger配置
@@ -52,3 +69,35 @@ springdoc:
 file:
   server:
     url: ${FILE_SERVER_URL:http://127.0.0.1:5001/api/file}
+
+railway:
+  worker-id: ${DETECTOR_WORKER_ID:detector-1}
+  max-tasks: ${DETECTOR_MAX_TASKS:9}
+  camera-hosts: ${CAMERA_ALLOWED_HOSTS:127.0.0.1,localhost,::1}
+  preview-service-key: ${PREVIEW_SERVICE_KEY:}
+  evidence-service-key: ${EVIDENCE_SERVICE_KEY:}
+  evidence-root: ${EVIDENCE_ROOT:workspace/runtime/risk-evidence}
+  evidence-max-bytes: ${EVIDENCE_MAX_BYTES:1073741824}
+  recording-root: ${FULL_RECORDING_ROOT:workspace/runtime/full-recordings}
+  recording-max-bytes: ${RECORDING_MAX_BYTES:2000000000000}
+  recording-retention-days: ${RECORDING_RETENTION_DAYS:30}
+  notify:
+    webhook-url: ${NOTIFY_WEBHOOK_URL:}
+    webhook-key: ${NOTIFY_WEBHOOK_KEY:}
+    allow-loopback: ${NOTIFY_ALLOW_LOOPBACK:false}
+    sms-access-key: ${SMS_ACCESS_KEY_ID:}
+    sms-secret: ${SMS_ACCESS_KEY_SECRET:}
+    sms-sign: ${SMS_SIGN_NAME:}
+    sms-template: ${SMS_TEMPLATE_CODE:}
+    sms-recipients: ${SMS_RECIPIENTS:}
+    sms-min-level: ${SMS_MIN_RISK_LEVEL:3}
+    sms-template-params: '${SMS_TEMPLATE_PARAMS_JSON:{}}'
+  allow-legacy-md5-login: ${ALLOW_LEGACY_MD5_LOGIN:false}
+  allowed-origins: ${ALLOWED_ORIGINS:}
+  mqtt:
+    enabled: ${MQTT_ENABLED:false}
+    uri: ${MQTT_BACKEND_URI:tcp://127.0.0.1:1883}
+    username: ${MQTT_BACKEND_USERNAME:}
+    password: ${MQTT_BACKEND_PASSWORD:}
+    ca-file: ${MQTT_CA_FILE:}
+    allow-local-plaintext: ${MQTT_ALLOW_LOCAL_PLAINTEXT:false}

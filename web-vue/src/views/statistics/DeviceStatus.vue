@@ -6,11 +6,12 @@
         <el-card class="box-card">
           <template #header>
             <div class="card-header">
-              <span>设备状态统计</span>
+              <span>设备台账与检测链路采样</span>
             </div>
           </template>
-          
+
           <div class="device-status-statistics">
+            <el-alert title="设备数量/状态来自台账。检测链路趋势只使用已记录的采样，空白表示未采集；采样比例不能作为全天设备在线率。" type="info" :closable="false" />
             <!-- 数据总览 -->
             <el-row :gutter="20" class="mb-4">
               <el-col :span="6">
@@ -76,7 +77,7 @@
                 <el-card shadow="hover">
                   <template #header>
                     <div class="card-header">
-                      <span>在线率趋势</span>
+                      <span>检测链路采样可用率</span>
                       <el-icon><TrendCharts /></el-icon>
                     </div>
                   </template>
@@ -103,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
 import type { EChartsOption } from 'echarts'
 import {
@@ -125,13 +126,18 @@ interface DeviceStatusViewModel {
   offline: number
   fault: number
   statusDistribution: Array<{ status: string; count: number }>
-  onlineRateTrend: Array<{ date: string; rate: number }>
+  onlineRateTrend: Array<{ date: string; rate: number|null; knownSamples:number; unknownSamples:number }>
   faultTypeDistribution: DeviceStatusStatisticsVO['faultTypeDistribution']
 }
 
 const statusChart = ref<HTMLElement>()
 const onlineRateChart = ref<HTMLElement>()
 const faultTypeChart = ref<HTMLElement>()
+const charts = new Map<HTMLElement,echarts.EChartsType>()
+let disposed=false
+const chartFor=(element:HTMLElement)=>{let chart=charts.get(element);if(!chart){chart=echarts.init(element);charts.set(element,chart)}return chart}
+const resize=()=>charts.forEach(chart=>chart.resize())
+onBeforeUnmount(()=>{disposed=true;window.removeEventListener('resize',resize);charts.forEach(chart=>chart.dispose());charts.clear()})
 const statistics = ref<DeviceStatusViewModel>({
   total: 0,
   online: 0,
@@ -146,7 +152,7 @@ const statistics = ref<DeviceStatusViewModel>({
 const initStatusChart = () => {
   if (!statusChart.value) return
 
-  const chart = echarts.init(statusChart.value)
+  const chart = chartFor(statusChart.value)
   const option: EChartsOption = {
     tooltip: {
       trigger: 'item',
@@ -188,20 +194,17 @@ const initStatusChart = () => {
   }
   chart.setOption(option)
 
-  window.addEventListener('resize', () => {
-    chart.resize()
-  })
 }
 
 // 初始化在线率趋势图表
 const initOnlineRateChart = () => {
   if (!onlineRateChart.value) return
 
-  const chart = echarts.init(onlineRateChart.value)
+  const chart = chartFor(onlineRateChart.value)
   const option: EChartsOption = {
     tooltip: {
       trigger: 'axis',
-      formatter: '{b}<br/>{a}: {c}%'
+      formatter: (values:any)=>{const item=statistics.value.onlineRateTrend[values[0]?.dataIndex];return item ? `${item.date}<br/>${item.rate===null?'未采集':item.rate+'%'}；有效样本 ${item.knownSamples}，未知样本 ${item.unknownSamples}` : '未采集'}
     },
     xAxis: {
       type: 'category',
@@ -218,9 +221,10 @@ const initOnlineRateChart = () => {
     },
     series: [
       {
-        name: '在线率',
+        name: '采样可用率',
         type: 'line',
-        smooth: true,
+        smooth: false,
+        connectNulls: false,
         data: statistics.value.onlineRateTrend.map(item => item.rate),
         itemStyle: {
           color: '#67C23A'
@@ -242,16 +246,13 @@ const initOnlineRateChart = () => {
   }
   chart.setOption(option)
 
-  window.addEventListener('resize', () => {
-    chart.resize()
-  })
 }
 
 // 初始化故障类型分布图表
 const initFaultTypeChart = () => {
   if (!faultTypeChart.value) return
 
-  const chart = echarts.init(faultTypeChart.value)
+  const chart = chartFor(faultTypeChart.value)
   const option: EChartsOption = {
     tooltip: {
       trigger: 'axis',
@@ -291,9 +292,6 @@ const initFaultTypeChart = () => {
   }
   chart.setOption(option)
 
-  window.addEventListener('resize', () => {
-    chart.resize()
-  })
 }
 
 // 获取状态对应的颜色
@@ -314,7 +312,7 @@ const getStatusColor = (status: string) => {
 const fetchData = async () => {
   try {
     const res = await getDeviceStatusStatistics()
-    console.log('后端返回的数据:', res)
+    if(disposed)return
 
     // 映射后端返回的字段名称
     statistics.value = {
@@ -328,13 +326,16 @@ const fetchData = async () => {
       })),
       onlineRateTrend: res.onlineRateTrend.map(item => ({
         date: item.date,
-        rate: Number(item.rate)
+        rate: res.trendSource==='DETECTION_CHAIN_SAMPLES' && item.rate!==null && item.knownSamples ? Number(item.rate) : null,
+        knownSamples: item.knownSamples || 0,
+        unknownSamples: item.unknownSamples || 0
       })),
       faultTypeDistribution: res.faultTypeDistribution
     }
 
     // 初始化图表
     nextTick(() => {
+      if(disposed)return
       initStatusChart()
       initOnlineRateChart()
       initFaultTypeChart()
@@ -354,6 +355,8 @@ const getStatusText = (status: number) => {
       return '离线'
     case 2:
       return '故障'
+    case 3:
+      return '未验证'
     default:
       return '未知'
   }
@@ -361,6 +364,7 @@ const getStatusText = (status: number) => {
 
 // 页面加载时获取数据
 onMounted(() => {
+  window.addEventListener('resize',resize)
   fetchData()
 })
 </script>

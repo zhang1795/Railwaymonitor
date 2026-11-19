@@ -1,0 +1,7 @@
+{
+  "mainClassesIdentical": true,
+  "runningArtifactSeparateFromTarget": true,
+  "comparedMainClasses": 62,
+  "runningServiceSurvivedRebuild": true,
+  "backendPidPreserved": true
+}

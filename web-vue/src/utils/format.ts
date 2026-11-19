@@ -71,7 +71,8 @@ export const formatDeviceStatus = (status: number) => {
   const statusMap: Record<number, string> = {
     0: '离线',
     1: '在线',
-    2: '故障'
+    2: '故障',
+    3: '未验证'
   }
   return statusMap[status] || '未知状态'
 }

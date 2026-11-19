@@ -1,0 +1,21 @@
+{
+  "login": true,
+  "sameOriginApi": true,
+  "syntheticTracks": false,
+  "realYoloModel": true,
+  "zeroBrowserDetection": true,
+  "demoCameraId": 21,
+  "demoCameraName": "P0本地验收样例（循环视频）",
+  "alarmId": 293,
+  "detectedType": "牛",
+  "monitoringSession": "bbe00c658b764c359ad2254445362131",
+  "stoppedAfterVerification": true,
+  "realJpegPreview": true,
+  "originalAlarmsPreserved": 84,
+  "pendingEvents": 0,
+  "monitoringEnabledAfterVerification": false,
+  "backendPort": 18080,
+  "frontendPort": 3000,
+  "mode": "loopback-http-mqtt-local-validation",
+  "businessDatabaseMigrated": true
+}

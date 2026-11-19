@@ -1,0 +1,11 @@
+{
+  "packagedBackend": true,
+  "persistentMySQL": true,
+  "tlsMqtt": true,
+  "browserCount": 0,
+  "backendRestartTested": true,
+  "desiredStateRestored": true,
+  "sameSessionWithinLease": true,
+  "alarmsForSession": 1,
+  "pending": 0
+}

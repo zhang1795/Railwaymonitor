@@ -1,8 +1,9 @@
 <template>
-  <div class="monitor">
+  <div class="monitor" :class="{'detection-mode':viewMode==='detection'}">
     <!-- 工具栏 -->
     <div class="toolbar">
       <div class="left">
+        <el-radio-group v-model="viewMode" size="small" aria-label="画面模式"><el-radio-button value="detection">检测结果</el-radio-button><el-radio-button value="source">原始直播</el-radio-button></el-radio-group>
         <el-radio-group v-model="layout" size="large">
           <el-radio-button :value="1">
             <el-icon>
@@ -21,6 +22,14 @@
           </el-radio-button>
         </el-radio-group>
       </div>
+      <div class="right" v-if="activeCamera">
+        <span>{{ activeCamera.name }}</span>
+        <MonitoringStatus :row="monitorRows[activeCamera.id]" :healthy="monitorHealthy" :label="monitoring.label(activeCamera.id)" :report-at="monitoring.reportAt(activeCamera.id)" />
+        <ModeSummary :camera="activeCamera" :session="monitorRows[activeCamera.id]?.session_id" />
+        <el-button v-if="userStore.userInfo?.role === 1" :disabled="!monitorLoaded" :type="monitorRows[activeCamera.id]?.enabled ? 'danger' : 'primary'" :loading="changingMonitoring.has(activeCamera.id)" @click="toggleMonitoring">
+          {{ monitorRows[activeCamera.id]?.enabled ? '停用后台检测' : '启用后台检测' }}
+        </el-button>
+      </div>
     </div>
 
     <div class="monitor-container">
@@ -29,8 +38,10 @@
         <template v-if="displayCameras.length > 0">
           <div class="video-grid" :class="'grid-' + layout">
             <div v-for="camera in displayCameras" :key="camera.id" class="video-item">
-              <VideoPlayer :camera="camera" :is-active="wsClient.isConnected()"
+              <DetectionView v-if="viewMode==='detection'" :camera="camera"/>
+              <VideoPlayer v-else :camera="camera" :is-active="wsClient.isConnected()"
                 @click="handleCameraClick" />
+              <el-tag v-if="viewMode==='source'" class="detector-state">{{ monitoring.label(camera.id) }}</el-tag>
             </div>
           </div>
         </template>
@@ -120,10 +131,7 @@
             <span class="label">IP地址：</span>
             <span class="value">{{ activeCamera.ipAddress }}</span>
           </div>
-          <div class="info-item">
-            <span class="label">RTSP地址：</span>
-            <span class="value">{{ activeCamera.rtspUrl }}</span>
-          </div>
+
           <div class="info-item">
             <span class="label">设备状态：</span>
             <el-tag :type="getStatusType(activeCamera.status)">
@@ -137,6 +145,7 @@
 </template>
 
 <script setup lang="ts">
+import ModeSummary from '@/components/RiskRuleDialog/ModeSummary.vue'
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -146,10 +155,11 @@ import { formatDeviceStatus } from '@/utils/format'
 import wsClient from '@/utils/websocket'
 import type { WebSocketMessage } from '@/utils/websocket'
 import VideoPlayer from '@/components/VideoPlayer/index.vue'
+import DetectionView from '@/components/DetectionView/index.vue'
 import { Picture } from '@element-plus/icons-vue'
-import mqttClient from '@/utils/mqttClient'
-import type { MqttMessage, DetectionResult } from '@/utils/mqttClient'
-import { getAbnormalEventList, createAbnormalEvent } from '@/api/Abnormal'
+import { useMonitoring } from '@/composables/useMonitoring'
+import MonitoringStatus from '@/components/MonitoringStatus/index.vue'
+import { useUserStore } from '@/stores/user'
 import MapComponent from '@/components/Map/index.vue'
 
 // 定义mapRef引用Map子组件
@@ -159,6 +169,7 @@ const router = useRouter()
 
 // 布局方式（1/4/9宫格）
 const layout = ref(4)
+const viewMode = ref<'detection'|'source'>('detection')
 // 摄像头列表
 const cameras = ref<Camera[]>([])
 // 当前显示的摄像头列表
@@ -175,6 +186,8 @@ const loading = ref(false)
 const checkingStatus = ref(false)
 // 当前显示的消息框
 let currentMessageBox: Promise<any> | null = null
+let disposed=false
+const pendingChecks=new Set<()=>void>()
 
 // 获取摄像头列表
 const fetchCameras = async () => {
@@ -205,18 +218,13 @@ const updateDisplayCameras = () => {
   const oldDisplayCameras = displayCameras.value.slice()
   displayCameras.value = displayCameras.value.filter(camera => {
     const currentCamera = cameras.value.find(c => c.id === camera.id)
-    return currentCamera && currentCamera.status === 1
+    return Boolean(currentCamera)
   }).slice(0, layout.value)
 
   // 检查是否有摄像头被移除，确保停止其视频流
   oldDisplayCameras.forEach(camera => {
     if (!displayCameras.value.some(c => c.id === camera.id)) {
-      wsClient.send({
-        type: 'stop_stream',
-        data: {
-          cameraId: camera.id
-        }
-      })
+      stopCameraStream(camera.id)
     }
   })
 }
@@ -250,6 +258,7 @@ const checkAllCamerasStatus = async () => {
 
     // 串行检查每个摄像头的状态，跳过故障状态的设备
     for (const camera of cameras.value) {
+      if(disposed)break
       // 跳过故障状态的设备
       if (camera.status === 2) {
         continue
@@ -268,30 +277,35 @@ const checkAllCamerasStatus = async () => {
 
       // 等待检测完成
       await new Promise<void>((resolve) => {
+        const finish=()=>{
+          clearTimeout(timeoutId)
+          wsClient.removeMessageHandler(handler)
+          pendingChecks.delete(finish)
+          resolve()
+        }
         // 创建一个超时检测
         const timeoutId = setTimeout(() => {
           console.log('检测超时:', camera.name)
-          resolve()
+          finish()
         }, 3000) // 给每个摄像头3秒的检测时间
 
         // 创建一个一次性的消息处理器
         const handler = (message: WebSocketMessage) => {
           if (message.type === 'camera_status' && message.data.cameraId === camera.id) {
-            clearTimeout(timeoutId) // 清除超时定时器
-            wsClient.removeMessageHandler(handler) // 移除这个临时处理器
-            resolve()
+            finish()
           }
         }
 
         wsClient.addMessageHandler(handler)
+        pendingChecks.add(finish)
       })
 
       // 检测完成后等待一小段时间再检测下一个，避免并发
-      await new Promise(resolve => setTimeout(resolve, 500))
+      if(!disposed)await new Promise(resolve => setTimeout(resolve, 500))
     }
 
     // 检测完成后显示提示
-    ElMessage({
+    if(!disposed)ElMessage({
       message: '摄像头状态检测完成',
       type: 'success',
       duration: 2000
@@ -318,51 +332,11 @@ const handleCameraClick = (camera: Camera) => {
   // fetchAbnormalRecords(camera.id)
 }
 
-// 处理WebSocket消息
+// Preview failures remain visible in their tiles so they can be retried.
 const handleWebSocketMessage = (message: WebSocketMessage) => {
-  const { type, data } = message
-
-  switch (type) {
-    case 'camera_status':
-      // 更新摄像头状态
-      const targetCamera = cameras.value.find(c => c.id === data.cameraId)
-      if (targetCamera) {
-        const oldStatus = targetCamera.status
-        targetCamera.status = data.status || 0
-
-        // 只在状态真正发生变化时才显示消息
-        if (oldStatus !== targetCamera.status) {
-          const statusText = formatDeviceStatus(targetCamera.status)
-          const messageType = targetCamera.status === 1 ? 'success' : targetCamera.status === 2 ? 'warning' : 'error'
-
-          // 如果摄像头离线或故障，从显示列表中移除
-          if (targetCamera.status === 0 || targetCamera.status === 2) {
-            targetCamera.streaming = false
-            displayCameras.value = displayCameras.value.filter(c => c.id !== data.cameraId)
-            // 停止该摄像头的流
-            wsClient.send({
-              type: 'stop_stream',
-              data: {
-                cameraId: data.cameraId
-              }
-            })
-          }
-
-          ElMessage({
-            type: messageType,
-            message: '摄像头 ' + targetCamera.name + ' ' + statusText
-          })
-        }
-      }
-      break
-
-    case 'stream_stopped':
-      // 找到对应的摄像头
-      const stoppedCamera = cameras.value.find(c => c.id === data.cameraId)
-      if (stoppedCamera) {
-        stoppedCamera.streaming = false
-      }
-      break;
+  if(message.type==='camera_status') {
+    const camera=cameras.value.find(row=>row.id===message.data.cameraId)
+    if(camera)camera.status=message.data.status ?? 0
   }
 }
 
@@ -372,351 +346,38 @@ const getStatusType = (status: number): 'success' | 'warning' | 'info' | 'danger
   return types[status] as 'success' | 'warning' | 'info' | 'danger' | 'primary'
 }
 
-// 启动视频流
-const startStream = (camera: Camera): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    console.log('启动视频流:', camera.id, camera.rtspUrl);
-
-    try {
-      // 添加一个标记，防止重复启动
-      if (camera.streaming) {
-        console.log('视频流已经在运行中:', camera.id)
-        resolve()
-        return
-      }
-
-      camera.streaming = true
-      wsClient.send({
-        type: 'start_stream',
-        data: {
-          cameraId: camera.id,
-          rtspUrl: camera.rtspUrl
-        }
-      })
-      // 这里简单处理为发送后立即resolve，实际可根据stream_ready消息调整
-      resolve()
-    } catch (error) {
-      console.error('启动视频流失败:', error)
-      camera.streaming = false
-      ElMessage.error('启动视频流失败，请稍后重试')
-      reject(error)
-    }
-    // // 防止重复启动
-    // if (camera.streaming) {
-    //   console.log('视频流已经在运行中:', camera.id);
-    //   resolve();
-    //   return;
-    // }
-
-    // // 超时定时器（15秒未就绪则视为失败）
-    // const timeoutTimer = setTimeout(() => {
-    //   camera.streaming = false;
-    //   wsClient.removeMessageHandler(handleStreamReady); // 清理监听器
-    //   reject(new Error(`视频流启动超时（摄像头ID: ${camera.id}）`));
-    // }, 15000);
-
-    // // 临时监听stream_ready消息的处理器
-    // const handleStreamReady = (message: WebSocketMessage) => {
-    //   // 只处理当前摄像头的就绪消息
-    //   if (message.type === 'stream_ready' && message.data.cameraId === camera.id) {
-    //     clearTimeout(timeoutTimer); // 清除超时定时器
-    //     wsClient.removeMessageHandler(handleStreamReady); // 移除临时监听器
-    //     camera.streaming = true;
-    //     console.log('视频流真正就绪:', camera.id);
-    //     resolve(); // 确认启动成功
-    //   }
-    // };
-
-    // try {
-    //   // 添加临时监听器，等待stream_ready消息
-    //   wsClient.addMessageHandler(handleStreamReady);
-    //   // 发送启动流命令
-    //   wsClient.send({
-    //     type: 'start_stream',
-    //     data: {
-    //       cameraId: camera.id,
-    //       rtspUrl: camera.rtspUrl
-    //     }
-    //   });
-    // } catch (error) {
-    //   clearTimeout(timeoutTimer);
-    //   wsClient.removeMessageHandler(handleStreamReady);
-    //   console.error('启动视频流失败:', error)
-    //   camera.streaming = false
-    //   ElMessage.error('启动视频流失败，请稍后重试')
-    //   reject(error);
-    // }
-  });
-};
-
-// 处理摄像头选择
-const handleCameraSelect = (camera: Camera) => {
-  // 如果是故障状态，直接提示不可用
-  if (camera.status === 2) {
-    ElMessage.warning('该摄像头处于故障状态，暂不可用')
+// Selecting a device never depends on its preview or cached online status.
+const handleCameraSelect = (camera:Camera) => {
+  activeCamera.value=camera
+  if(isActiveCamera(camera.id)) {
+    displayCameras.value=displayCameras.value.filter(row=>row.id!==camera.id)
+    stopCameraStream(camera.id)
     return
   }
-
-  if (camera.status !== 1) {
-    ElMessage.warning('该摄像头当前不可用')
-    return
+  if(displayCameras.value.length>=layout.value) {
+    const removed=displayCameras.value.shift()
+    if(removed)stopCameraStream(removed.id)
   }
-
-  // 检查WebSocket连接状态
-  if (!wsClient.isConnected()) {
-    // 尝试重置连接
-    wsClient.resetConnectionState()
-    ElMessage.warning('正在重新连接服务器，请几秒后再试')
-    return
+  displayCameras.value.push(camera)
+  if(mapRef.value && Number.isFinite(camera.longitude) && Number.isFinite(camera.latitude)) {
+    nextTick(()=>mapRef.value?.setCameraLocation(camera.longitude,camera.latitude,16))
   }
+}
 
-  // 检查MQTT连接状态
-  if (!mqttClient.isConnected()) {
-    ElMessage.warning('MQTT尚未连接，请等待连接完成')
-    return
-  }
-
-  // ========== 新增：调用地图组件的定位方法 ==========
-  // 1. 校验摄像头经纬度是否有效
-  const { longitude, latitude } = camera;
-  const lng = Number(longitude);
-  const lat = Number(latitude);
-  
-  if (longitude && latitude && !isNaN(lng) && !isNaN(lat)) {
-    nextTick(() => {
-      // 2. 调用子组件暴露的定位方法（缩放级别16可按需调整）
-      if (mapRef.value) {
-        mapRef.value.setCameraLocation(lng, lat, 16);
-        ElMessage.success(`已定位到摄像头【${camera.name}】的位置`);
-      } else {
-        ElMessage.warning('地图组件尚未加载完成，无法定位');
-      }
-    });
-  } else if (!longitude || !latitude) {
-    ElMessage.warning('该摄像头未配置经纬度信息，无法定位');
-  } else {
-    ElMessage.warning('该摄像头经纬度格式错误，无法定位');
-  }
-  // ========== 地图定位逻辑结束 ==========
-
-  // 设置当前活跃摄像头（用于关键帧显示和抽屉面板）
-  activeCamera.value = camera
-
-  // 处理显示列表中的摄像头
-  if (isActiveCamera(camera.id)) {
-    // 如果已经在显示，则从显示列表中移除
-    displayCameras.value = displayCameras.value.filter(c => c.id !== camera.id)
-    // 停止该摄像头的流
-    wsClient.send({
-      type: 'stop_stream',
-      data: {
-        cameraId: camera.id
-      }
-    })
-  } else {
-    // 如果未显示且显示列表未满，则添加到显示列表
-    if (displayCameras.value.length < layout.value) {
-      // 列表未满：直接启动并添加
-      startStream(camera)
-        .then(() => {
-          displayCameras.value.push(camera);
-          // 启动成功后执行MQTT操作
-          publishVideoMqttMessage(camera);
-        })
-        .catch((error) => {
-          console.error('启动视频流失败:', error);
-          ElMessage.error(`启动失败: ${error.message}`);
-        });
-    } else {
-      // 列表已满：替换最早的摄像头
-      const removedCamera = displayCameras.value.shift();
-      if (removedCamera) {
-        // 停止被替换的摄像头
-        wsClient.send({
-          type: 'stop_stream',
-          data: { cameraId: removedCamera.id }
-        });
-      }
-      // 启动新摄像头
-      startStream(camera)
-        .then(() => {
-          displayCameras.value.push(camera);
-          // 启动成功后执行MQTT操作
-          publishVideoMqttMessage(camera);
-          ElMessage.info(`已达到${layout.value}个摄像头上限，自动替换最早添加的摄像头`);
-        })
-        .catch((error) => {
-          console.error('启动视频流失败:', error);
-          ElMessage.error(`启动失败: ${error.message}`);
-        });
-    }
-  }
-};
-
-// 发布视频流相关的MQTT消息
-const publishVideoMqttMessage = (camera: Camera) => {
-  const publishData = {
-    videoUrl: camera.rtspUrl,
-    videoId: camera.id.toString(),
-    deviceName: camera.name,
-    startTime: new Date().toISOString().replace('T', ' ').slice(0, 19)
-  };
-
-  // 发布到指定主题
-  mqttClient.publish('/UAV/videoTopic/post', publishData);
-  console.log('MQTT消息已发布:', publishData);
-
-  // 订阅检测结果主题（确保只订阅一次，可根据实际需求调整）
-  mqttClient.subscribe('/UAV/videoAlarmTopic/post');
-
-  // 注册消息处理器（确保只注册一次，可根据实际需求调整）
-  mqttClient.registerHandler('/UAV/videoAlarmTopic/post', handleDetectionData);
-};
-
-// 全局去重：避免同一视频同一物体重复存储（跨帧/跨批量生效）
-const savedObjectIds: { [videoId: string]: Set<string> } = {};
-
-// 全局聚合缓存：存储每个视频的物体置信度和时间范围（跨帧累积）
-const globalAggregateCache: {
-  [videoId: string]: {
-    aggregatedObjects: { [objectID: string]: { type: string; maxScore: number } };
-    firstStartTime: string; // 视频最早开始时间
-    latestEndTime: string;  // 视频最新结束时间
-    videoFileUrl: string;
-  };
-} = {};
-
-// 视频结束判定：收到最后一帧后延迟1秒执行存储（确保所有帧都已处理）
-const VIDEO_FINISH_DELAY = 1000;
-const finishTimers: { [videoId: string]: NodeJS.Timeout } = {};
-
-const handleDetectionData = (message: MqttMessage) => {
-  console.log('收到检测结果（单条消息，含多帧数据）:', message);
-
-  // 容错：消息格式错误（重点校验 objectDetect 字段是否存在）
-  if (!message || !message.videoId || !message.result || !Array.isArray(message.result)) {
-    console.warn('检测结果格式不正确或缺少核心字段（videoId/result）');
-    ElMessage.warning('检测结果格式不正确');
-    return;
-  }
-
-  // -------------------------- 1. 提取当前消息的核心信息 --------------------------
-  const { videoId, startTime, endTime, videoFileUrl, result } = message;
-
-  // 初始化当前视频的全局缓存（首次处理该视频时）
-  if (!globalAggregateCache[videoId]) {
-    globalAggregateCache[videoId] = {
-      aggregatedObjects: {}, // 跨帧聚合物体（保留最高置信度）
-      firstStartTime: startTime || new Date().toLocaleString(), // 取第一条消息的startTime
-      latestEndTime: endTime || new Date().toLocaleString(),   // 实时更新为最新帧的endTime
-      videoFileUrl: videoFileUrl || '待上传'
-    };
-  }
-
-  // 更新视频的最新结束时间（每帧消息都更新，确保是完整时间范围）
-  if (endTime) {
-    globalAggregateCache[videoId].latestEndTime = endTime;
-  }
-
-  // -------------------------- 2. 跨帧聚合：保留同一物体的最高置信度（修复 type 问题） --------------------------
-  const { aggregatedObjects } = globalAggregateCache[videoId];
-
-  result.forEach((detection, idx) => {
-    // 重点：打印检测结果，确认类别字段名（关键排查！）
-    console.log(`第${idx + 1}个检测结果：`, detection);
-
-    // 1. 确认类别字段（根据算法端返回的实际字段名修改！）
-    // 假设算法端返回的类别字段是 objectDetect，若不是则替换为 label/className 等
-    const type = detection.objectDetect || '未知类别';
-    const objectID = detection.objectID;
-    const score = detection.score;
-
-    // 容错：跳过缺少 objectID/有效类别的结果（避免存储空类型）
-    if (!objectID || type === '未知类别' || isNaN(score)) {
-      console.warn(`无效检测结果（缺少ID/类别/置信度），跳过:`, detection);
-      return;
-    }
-
-    // 2. 聚合逻辑：同一objectID跨帧保留最高置信度
-    if (!aggregatedObjects[objectID]) {
-      // 新物体：直接存入
-      aggregatedObjects[objectID] = { type, maxScore: score };
-      console.log(`视频${videoId}新增物体：ID=${objectID}，类别=${type}，初始置信度=${score}`);
-    } else {
-      // 已有物体：更新最高置信度
-      if (score > aggregatedObjects[objectID].maxScore) {
-        aggregatedObjects[objectID].maxScore = score;
-        console.log(`视频${videoId}物体${objectID}最高置信度更新为:`, score);
-      }
-    }
-  });
-
-  // -------------------------- 3. 延迟存储：确保所有帧都已处理 --------------------------
-  if (finishTimers[videoId]) {
-    clearTimeout(finishTimers[videoId]);
-  }
-
-  finishTimers[videoId] = setTimeout(() => {
-    const cache = globalAggregateCache[videoId];
-    if (!cache || Object.keys(cache.aggregatedObjects).length === 0) {
-      console.log(`视频${videoId}无有效物体，跳过存储`);
-      delete globalAggregateCache[videoId];
-      delete finishTimers[videoId];
-      return;
-    }
-
-    // -------------------------- 4. 修复 location：从完整摄像头列表匹配（关键！） --------------------------
-    // 错误做法：从 displayCameras（当前显示的摄像头）匹配
-    // const targetCamera = displayCameras.value.find(c => c.id.toString() === videoId);
-    // 正确做法：从 cameras（所有摄像头列表）匹配
-    const targetCamera = cameras.value.find(c => c.id.toString() === videoId);
-    const cameraLocation = targetCamera?.location || '未知位置';
-
-    // 打印日志，确认摄像头是否匹配成功
-    if (!targetCamera) {
-      console.warn(`未找到 videoId=${videoId} 对应的摄像头，location 设为默认`);
-    } else {
-      console.log(`匹配到摄像头：${targetCamera.name}，位置：${targetCamera.location}`);
-    }
-
-    // -------------------------- 5. 统一存储：每个objectID仅存1次 --------------------------
-    Object.entries(cache.aggregatedObjects).forEach(([objectID, { type, maxScore }]) => {
-      // 初始化去重集合
-      if (!savedObjectIds[videoId]) {
-        savedObjectIds[videoId] = new Set();
-      }
-
-      // 去重：已保存过的物体跳过
-      if (savedObjectIds[videoId].has(objectID)) {
-        console.log(`视频${videoId}物体${objectID}（类别：${type}）已存储，跳过`);
-        return;
-      }
-
-      // 执行存储
-      console.log(`存储视频${videoId}物体: ID=${objectID}，类别=${type}，位置=${cameraLocation}，最高置信度=${maxScore}`);
-      createAbnormalEvent({
-        cameraId: Number(videoId),
-        eventTime: new Date().toISOString(),
-        location: cameraLocation, // 从完整摄像头列表获取
-        level: maxScore >= 0.7 ? 2 : 1,
-        imageUrl: cache.videoFileUrl,
-        status: 0,
-        type: type, 
-        description: `物体【${type}】(ID: ${objectID}）在视频时间段「${cache.firstStartTime} 至 ${cache.latestEndTime}」内被检测到，
-                      位置：${cameraLocation}，最高置信度：${(maxScore * 100).toFixed(1)}%`
-      });
-
-      // 标记为已保存
-      savedObjectIds[videoId].add(objectID);
-    });
-
-    // 清理缓存和定时器
-    console.log(`视频${videoId}所有帧处理完成，共存储${Object.keys(cache.aggregatedObjects).length}个唯一物体`);
-    delete globalAggregateCache[videoId];
-    delete finishTimers[videoId];
-  }, VIDEO_FINISH_DELAY);
-};
-
+const userStore = useUserStore()
+const monitoring = useMonitoring()
+const { rows:monitorRows, loaded:monitorLoaded, healthy:monitorHealthy, changing:changingMonitoring } = monitoring
+const refreshDetectionState = monitoring.refresh
+const toggleMonitoring = async () => {
+  const camera=activeCamera.value
+  if(!camera || !monitorLoaded.value)return
+  const enabled=!monitorRows.value[camera.id]?.enabled
+  await monitoring.change(camera.id,enabled)
+  ElMessage.success(enabled?'已启用后台检测，离开页面后继续运行':'已请求停用后台检测')
+}
+function stopCameraStream(cameraId: number) {
+  wsClient.send({ type:'stop_stream', data:{ cameraId } })
+}
 
 onMounted(() => {
   // 添加WebSocket消息处理器
@@ -725,32 +386,25 @@ onMounted(() => {
   wsClient.resetConnectionState()
   // 获取摄像头列表
   fetchCameras()
-  // 连接MQTT服务器
-  mqttClient.connect()
 })
 
 onBeforeUnmount(() => {
+  disposed=true
+  for(const finish of pendingChecks)finish()
   // 移除WebSocket消息处理器
   wsClient.removeMessageHandler(handleWebSocketMessage)
   // 停止所有视频流
   displayCameras.value.forEach(camera => {
-    wsClient.send({
-      type: 'stop_stream',
-      data: {
-        cameraId: camera.id
-      }
-    })
+    stopCameraStream(camera.id)
   })
   // 关闭WebSocket连接
   wsClient.close()
-  // 移除MQTT消息处理器
-  mqttClient.removeHandler('/UAV/videoAlarmTopic/post')
-  // 断开MQTT连接
-  mqttClient.disconnect()
+
 })
 </script>
 
 <style lang="scss" scoped>
+.detector-state { position: absolute; top: 8px; right: 8px; z-index: 3; }
 .monitor {
   height: 100%;
   padding: 20px;
@@ -762,11 +416,16 @@ onBeforeUnmount(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
     margin-bottom: 0;
+    .left { display:flex;align-items:center;flex-wrap:wrap;gap:12px; }
 
     .right {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
     }
   }
 
@@ -803,17 +462,20 @@ onBeforeUnmount(() => {
         }
 
         &.grid-4 {
+          height: 450px;
           grid-template-columns: repeat(2, 1fr);
           grid-template-rows: repeat(2, 1fr);
         }
 
         &.grid-9 {
+          height: 660px;
           grid-template-columns: repeat(3, 1fr);
           grid-template-rows: repeat(3, 1fr);
         }
       }
 
       .video-item {
+        position: relative;
         width: 100%;
         height: 100%;
         min-height: 200px;
@@ -1006,6 +668,12 @@ onBeforeUnmount(() => {
   }
 }
 
+.monitor.detection-mode .monitor-container .main-video .video-grid {
+  &.grid-1 { height:620px; }
+  &.grid-4 { height:720px; }
+  &.grid-9 { height:900px; }
+}
+
 .camera-info {
   margin-bottom: 30px;
 
@@ -1067,12 +735,15 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 1200px) {
-  .monitor-container {
+  .monitor .monitor-container {
     flex-direction: column;
+    align-items:stretch;
 
     .main-video {
       min-height: 400px;
+      width:100%;max-width:none;flex:none;
     }
+    .map-area { width:100%;height:300px;flex:none; }
 
     .right-panel {
       width: 100%;

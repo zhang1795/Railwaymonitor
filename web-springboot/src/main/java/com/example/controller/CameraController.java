@@ -11,6 +11,7 @@ import com.example.service.CameraService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +33,7 @@ public class CameraController {
      */
     @Operation(summary = "创建摄像头", description = "创建新的摄像头设备")
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Long> createCamera(@RequestBody @Valid CameraCreateDTO dto) {
         return Result.success(cameraService.createCamera(dto));
     }
@@ -41,6 +43,7 @@ public class CameraController {
      */
     @Operation(summary = "更新摄像头", description = "更新摄像头设备信息")
     @PutMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> updateCamera(@RequestBody @Valid CameraUpdateDTO dto) {
         cameraService.updateCamera(dto);
         return Result.success();
@@ -51,6 +54,7 @@ public class CameraController {
      */
     @Operation(summary = "删除摄像头", description = "根据ID删除摄像头设备")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> deleteCamera(@PathVariable Long id) {
         cameraService.deleteCamera(id);
         return Result.success();
@@ -79,6 +83,7 @@ public class CameraController {
      */
     @Operation(summary = "更新摄像头状态", description = "更新摄像头设备的在线状态")
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> updateStatus(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
         cameraService.updateCameraStatus(id, body.get("status"));
         return Result.success();

@@ -1,0 +1,17 @@
+{
+  "guardianHealthy": true,
+  "newCommittedReceipts": 5,
+  "rejectedSinceRollout": 0,
+  "eventSqliteIntegrity": "ok",
+  "pendingAtSample": 0,
+  "recordingPending": 1,
+  "recordingFailed": 0,
+  "businessClipChecksumVerified": true,
+  "sourceRecordingClips": 7,
+  "recordingPendingAfterDrain": 0,
+  "recordingFailedAfterDrain": 0,
+  "initialCheckWasFirstFrameOnly": true,
+  "initialBusinessClipFullDecodePassed": false,
+  "corruptionFoundInInitial4KStream": true,
+  "fullDecodeFixEvidence": "business-media-after-fix.json"
+}

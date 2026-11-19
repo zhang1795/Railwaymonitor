@@ -1,0 +1,8 @@
+{
+  "anonymousDenied": true,
+  "badPasswordDenied": true,
+  "forgedAckDenied": true,
+  "forgedControlDenied": true,
+  "crossWorkerPublishDenied": true,
+  "untrustedCertificateDenied": true
+}

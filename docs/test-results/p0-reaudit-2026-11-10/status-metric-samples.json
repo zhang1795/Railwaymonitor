@@ -1,0 +1,18 @@
+{
+  "taskStatusSamples": [
+    {
+      "cameraId": 21,
+      "state": "STOPPED",
+      "lastReportedNodePending": 1,
+      "statusAgeSeconds": 9665
+    },
+    {
+      "cameraId": 22,
+      "state": "RUNNING",
+      "lastReportedNodePending": 0,
+      "statusAgeSeconds": 3
+    }
+  ],
+  "actualNodePendingAtFinalCheck": 0,
+  "requiresFreshnessAndScopeInP1": true
+}

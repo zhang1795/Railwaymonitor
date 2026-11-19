@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: opening and closing monitor pages never changes persisted detection intent
+ok 1 - opening and closing monitor pages never changes persisted detection intent
+  ---
+  duration_ms: 276.081169
+  type: 'test'
+  ...
+# Subtest: offline and faulty cameras can be selected and stopped without any preview connection
+ok 2 - offline and faulty cameras can be selected and stopped without any preview connection
+  ---
+  duration_ms: 72.435849
+  type: 'test'
+  ...
+# Subtest: grid changes and stream errors retain independent control of background detection
+ok 3 - grid changes and stream errors retain independent control of background detection
+  ---
+  duration_ms: 46.922267
+  type: 'test'
+  ...
+# Subtest: stale UTC samples and failed polls cannot keep a healthy RUNNING label
+ok 4 - stale UTC samples and failed polls cannot keep a healthy RUNNING label
+  ---
+  duration_ms: 37.357206
+  type: 'test'
+  ...
+# Subtest: status polling is serialized and a late response cannot update an unmounted page
+ok 5 - status polling is serialized and a late response cannot update an unmounted page
+  ---
+  duration_ms: 32.42257
+  type: 'test'
+  ...
+# Subtest: camera management can stop a faulty device without opening its preview
+ok 6 - camera management can stop a faulty device without opening its preview
+  ---
+  duration_ms: 52.635576
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 539.676761

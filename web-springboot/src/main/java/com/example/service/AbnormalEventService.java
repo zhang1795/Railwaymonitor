@@ -52,7 +52,7 @@ public interface AbnormalEventService extends IService<AbnormalEvent> {
      * @param id     事件ID
      * @param status 状态(0:未处理 1:处理中 2:已处理)
      */
-    void updateAbnormalEventStatus(Long id, Integer status);
+    void updateAbnormalEventStatus(Long id, Integer status, Long version, String result);
 
     /**
      * 删除异常事件
@@ -68,4 +68,4 @@ public interface AbnormalEventService extends IService<AbnormalEvent> {
      * 更新异常事件
      */
     void updateAbnormalEvent(AbnormalEventUpdateDTO dto);
-} 
+}

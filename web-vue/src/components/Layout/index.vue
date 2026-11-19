@@ -40,6 +40,8 @@
           </el-breadcrumb>
         </div>
         <div class="right">
+          <AlarmInbox v-if="!userInfo?.passwordChangeRequired" />
+          <MonitoringFaultInbox v-if="!userInfo?.passwordChangeRequired" />
           <el-tooltip content="刷新页面" placement="bottom">
             <el-icon class="action-icon" @click="refresh">
               <Refresh />
@@ -90,6 +92,8 @@
       title="修改密码"
       width="400px"
       :close-on-click-modal="false"
+      :show-close="!userInfo?.passwordChangeRequired"
+      :close-on-press-escape="!userInfo?.passwordChangeRequired"
     >
       <el-form
         ref="passwordFormRef"
@@ -123,7 +127,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="passwordDialogVisible = false">取消</el-button>
+        <el-button v-if="!userInfo?.passwordChangeRequired" @click="passwordDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="loading" @click="handleUpdatePassword">
           确定
         </el-button>
@@ -133,7 +137,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import AlarmInbox from '@/components/AlarmInbox/index.vue'
+import MonitoringFaultInbox from '@/components/MonitoringFaultInbox/index.vue'
+import { alarmInbox } from '@/stores/alarmInbox'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import type { FormInstance } from 'element-plus'
@@ -148,6 +155,11 @@ const userStore = useUserStore()
 
 // 用户信息
 const userInfo = computed(() => userStore.userInfo)
+watch(() => `${userInfo.value?.id}:${userInfo.value?.passwordChangeRequired}`, () => {
+  alarmInbox.stop()
+  if(userInfo.value && !userInfo.value.passwordChangeRequired)alarmInbox.start()
+}, {immediate:true})
+onBeforeUnmount(()=>alarmInbox.stop())
 
 // 菜单列表
 const menuList = computed(() => route.matched[0]?.children || [])
@@ -191,7 +203,7 @@ const handleLogout = () => {
 
 // 修改密码
 const loading = ref(false)
-const passwordDialogVisible = ref(false)
+const passwordDialogVisible = ref(Boolean(userInfo.value?.passwordChangeRequired))
 const passwordFormRef = ref<FormInstance>()
 const passwordForm = ref({
   oldPassword: '',
@@ -207,8 +219,8 @@ const passwordRules = {
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
     { validator: (rule: any, value: string) => {
-      if (!validatePassword(value)) {
-        return new Error('密码必须为6-20位字母或数字')
+      if (value.length < 12 || new TextEncoder().encode(value).length > 72) {
+        return new Error('口令至少12个字符，UTF-8最多72字节')
       }
       return true
     }, trigger: 'blur' },
@@ -328,4 +340,4 @@ const handleUpdatePassword = async () => {
 .fade-leave-to {
   opacity: 0;
 }
-</style> 
+</style>

@@ -1,0 +1,9 @@
+{
+  "httpSession": true,
+  "csrf": true,
+  "realJpegFrames": true,
+  "clientSourceUrlIgnored": true,
+  "logoutRevokedStream": true,
+  "frameCount": 75
+}
+

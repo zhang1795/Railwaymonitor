@@ -9,6 +9,17 @@ import java.time.LocalDateTime;
  */
 @Data
 public class AbnormalEventVO {
+    private Long version;
+    private Boolean manualOverride;
+    private java.util.Map<String,Object> risk;
+    private java.util.List<String> unreadNoticeIds;
+    private String detectionState;
+    private String detectedType;
+    private Double confidence;
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    private LocalDateTime firstSeen;
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    private LocalDateTime lastSeen;
     /**
      * 事件ID
      */

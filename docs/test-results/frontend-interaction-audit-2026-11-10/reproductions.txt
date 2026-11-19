@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: F01: offline camera and disconnected preview prevent selecting a running task for stopping
+ok 1 - F01: offline camera and disconnected preview prevent selecting a running task for stopping
+  ---
+  duration_ms: 175.430125
+  type: 'test'
+  ...
+# Subtest: F02: failed status polls leave RUNNING visible without checking sample age
+ok 2 - F02: failed status polls leave RUNNING visible without checking sample age
+  ---
+  duration_ms: 48.941968
+  type: 'test'
+  ...
+# Subtest: F03: after the first frame, missing frames leave the old canvas and online state indefinitely; retry is a no-op when disconnected
+ok 3 - F03: after the first frame, missing frames leave the old canvas and online state indefinitely; retry is a no-op when disconnected
+  ---
+  duration_ms: 37.501708
+  type: 'test'
+  ...
+# Subtest: F03: the production WebSocket connection flag does not invalidate a Vue render effect
+ok 4 - F03: the production WebSocket connection flag does not invalidate a Vue render effect
+  ---
+  duration_ms: 43.908253
+  type: 'test'
+  ...
+# Subtest: F04: a new server alarm is not fetched by an already-open abnormal-events page
+ok 5 - F04: a new server alarm is not fetched by an already-open abnormal-events page
+  ---
+  duration_ms: 39.865881
+  type: 'test'
+  ...
+# Subtest: F06: without map credentials the map produces no coordinates and camera creation has no fallback
+ok 6 - F06: without map credentials the map produces no coordinates and camera creation has no fallback
+  ---
+  duration_ms: 69.26323
+  type: 'test'
+  ...
+# Subtest: F06: even with credentials, a map SDK failure has no initialization recovery path
+ok 7 - F06: even with credentials, a map SDK failure has no initialization recovery path
+  ---
+  duration_ms: 46.314501
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 481.898912

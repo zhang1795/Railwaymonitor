@@ -1,0 +1,28 @@
+{
+  "http": {
+    "frontend": 200,
+    "backend": 200,
+    "flask": 200,
+    "broker": 200
+  },
+  "unreadCount": 371,
+  "unreadFilterWorks": true,
+  "readWritesByThisCheck": 0,
+  "monitoring": [
+    {
+      "camera": 21,
+      "enabled": false,
+      "state": "STOPPED"
+    },
+    {
+      "camera": 22,
+      "enabled": true,
+      "state": "RUNNING"
+    }
+  ],
+  "actualOutboxPending": 0,
+  "readinessSeconds": 7.762,
+  "intentPreserved": true,
+  "sessionsPreserved": true,
+  "detectorPidPreserved": true
+}

@@ -1,0 +1,27 @@
+{
+  "databaseOutageRecovered": true,
+  "backendHardKillRecovered": true,
+  "persistentIntentRestored": true,
+  "sameSessionWithinLease": true,
+  "syntheticSessionAlarms": 1,
+  "realYoloTrackAlarms": 5,
+  "realYoloCowAlarms": 5,
+  "detectionContinuesAfterLogout": true,
+  "pendingFinal": 0,
+  "rejectedEvents": 0,
+  "viewers": {
+    "twoAuthenticatedSessions": true,
+    "twoViewersReceiveJpeg": true,
+    "closingOneKeepsOther": true,
+    "stoppingPreviewKeepsDetection": true,
+    "detectionAdvancesWithoutPreview": true,
+    "clientSourceUrlIgnored": true,
+    "logoutStopsPreview": true,
+    "badOriginDenied": true,
+    "unauthenticatedPreviewDenied": true,
+    "frameCounts": {
+      "a": 2,
+      "b": 77
+    }
+  }
+}

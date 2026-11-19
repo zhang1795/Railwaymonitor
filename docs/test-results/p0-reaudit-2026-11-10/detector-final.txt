@@ -1,0 +1,10 @@
+..../data/zxy/RailwayProject/workspace/Railwaymonitor/RailwayDetector/utils/general.py:27: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+  import pkg_resources as pkg
+/data/zxy/RailwayProject/workspace/Railwaymonitor/workspace/runtime/detector-env/lib/python3.8/site-packages/pkg_resources/__init__.py:3154: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('mpl_toolkits')`.
+Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+  declare_namespace(pkg)
+.........................................................
+----------------------------------------------------------------------
+Ran 61 tests in 7.715s
+
+OK

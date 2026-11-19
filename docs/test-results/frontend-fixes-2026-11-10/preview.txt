@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: preview authenticates before stream commands and renews through HTTP
+ok 1 - preview authenticates before stream commands and renews through HTTP
+  ---
+  duration_ms: 156.771405
+  type: 'test'
+  ...
+# Subtest: offline status command queue is bounded and cancelled streams never reopen
+ok 2 - offline status command queue is bounded and cancelled streams never reopen
+  ---
+  duration_ms: 48.958063
+  type: 'test'
+  ...
+# Subtest: Vue render effects observe connection changes without unrelated renders
+ok 3 - Vue render effects observe connection changes without unrelated renders
+  ---
+  duration_ms: 46.919274
+  type: 'test'
+  ...
+# Subtest: reconnection restores only still-mounted previews and isolates a cancelled camera
+ok 4 - reconnection restores only still-mounted previews and isolates a cancelled camera
+  ---
+  duration_ms: 28.588272
+  type: 'test'
+  ...
+# Subtest: manual retry recovers after the five automatic reconnect attempts are exhausted
+ok 5 - manual retry recovers after the five automatic reconnect attempts are exhausted
+  ---
+  duration_ms: 40.332192
+  type: 'test'
+  ...
+# Subtest: an old asynchronous grant cannot authenticate a replacement connection
+ok 6 - an old asynchronous grant cannot authenticate a replacement connection
+  ---
+  duration_ms: 28.766946
+  type: 'test'
+  ...
+# Subtest: stream retry waits for its own stop acknowledgement and leaves other streams running
+ok 7 - stream retry waits for its own stop acknowledgement and leaves other streams running
+  ---
+  duration_ms: 29.696624
+  type: 'test'
+  ...
+# Subtest: a ready message without a decoded frame never claims the picture is live
+ok 8 - a ready message without a decoded frame never claims the picture is live
+  ---
+  duration_ms: 41.870489
+  type: 'test'
+  ...
+# Subtest: missing frames expire the picture in five seconds, and a new frame recovers it
+ok 9 - missing frames expire the picture in five seconds, and a new frame recovers it
+  ---
+  duration_ms: 38.426063
+  type: 'test'
+  ...
+# Subtest: player retry creates a connection even when WebSocket is disconnected
+ok 10 - player retry creates a connection even when WebSocket is disconnected
+  ---
+  duration_ms: 40.390779
+  type: 'test'
+  ...
+# Subtest: a late image decode cannot paint a removed player or overwrite a newer frame
+ok 11 - a late image decode cannot paint a removed player or overwrite a newer frame
+  ---
+  duration_ms: 27.881277
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 543.703078

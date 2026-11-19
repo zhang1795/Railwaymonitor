@@ -1,0 +1,54 @@
+{
+  "sameModelInstance": true,
+  "originalAssetUnchanged": true,
+  "businessCamerasNotEnabled": true,
+  "durationTargetSeconds": 30,
+  "detectorHash": "51240ae7a423f9d7a1104122511f8523facf597d189229387f1436ce6eadd1ff",
+  "routes": [
+    {
+      "route": 1,
+      "sourceWidth": 3840,
+      "sourceHeight": 2160,
+      "processedFrames": 27,
+      "windowSeconds": 30.518,
+      "effectiveFps": 0.885,
+      "sampledFrames": 4,
+      "maxReferenceMae": 0.0,
+      "maxFrameAgeAfterInferenceMs": 1298.516,
+      "maxRelativeDecoderLagMs": 0.0,
+      "decodeErrors": 0,
+      "decodeChecked": true,
+      "error": ""
+    },
+    {
+      "route": 2,
+      "sourceWidth": 3840,
+      "sourceHeight": 2160,
+      "processedFrames": 27,
+      "windowSeconds": 30.82,
+      "effectiveFps": 0.876,
+      "sampledFrames": 4,
+      "maxReferenceMae": 0.0,
+      "maxFrameAgeAfterInferenceMs": 1773.759,
+      "maxRelativeDecoderLagMs": 0.0,
+      "decodeErrors": 0,
+      "decodeChecked": true,
+      "error": ""
+    },
+    {
+      "route": 3,
+      "sourceWidth": 3840,
+      "sourceHeight": 2160,
+      "processedFrames": 27,
+      "windowSeconds": 30.188,
+      "effectiveFps": 0.894,
+      "sampledFrames": 4,
+      "maxReferenceMae": 0.0,
+      "maxFrameAgeAfterInferenceMs": 1431.174,
+      "maxRelativeDecoderLagMs": 0.0,
+      "decodeErrors": 0,
+      "decodeChecked": true,
+      "error": ""
+    }
+  ]
+}

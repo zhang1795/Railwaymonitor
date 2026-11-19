@@ -1,0 +1,34 @@
+{
+  "startedAt": 1794370514.808364,
+  "completedAt": 1794370536.1237054,
+  "beforeTasks": {
+    "21": [
+      "0",
+      "bbe00c658b764c359ad2254445362131",
+      "STOPPED"
+    ],
+    "22": [
+      "1",
+      "6009307f448e4be299d93417d5aadccd",
+      "RUNNING"
+    ]
+  },
+  "afterTasks": {
+    "21": [
+      "0",
+      "bbe00c658b764c359ad2254445362131",
+      "STOPPED"
+    ],
+    "22": [
+      "1",
+      "d8b162f0aebb42b7819232cc416a1309",
+      "RUNNING"
+    ]
+  },
+  "beforeLegacy": 84,
+  "afterLegacy": 84,
+  "backendReadySeconds": 7.702,
+  "detectorRecoverySeconds": 7.505,
+  "intentPreserved": true,
+  "enabledRunning": true
+}

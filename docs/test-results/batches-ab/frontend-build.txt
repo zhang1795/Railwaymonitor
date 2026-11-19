@@ -1,0 +1,63 @@
+
+> web-vue@0.0.0 build
+> vue-tsc -b && vite build
+
+vite v6.3.6 building for production...
+transforming...
+✓ 2199 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                        0.47 kB │ gzip:   0.31 kB
+dist/assets/logo-C6s0ZmxK.png                         46.38 kB
+dist/assets/login-bg-CKNdmQn6.jpg                    329.57 kB
+dist/assets/el-overlay-CUAhHdWP.css                    0.18 kB │ gzip:   0.15 kB
+dist/assets/AbnormalEvent-BsqcZLVQ.css                 0.28 kB │ gzip:   0.19 kB
+dist/assets/DeviceStatus-CU3XRYKI.css                  0.39 kB │ gzip:   0.23 kB
+dist/assets/index-BW8VYgn9.css                         0.60 kB │ gzip:   0.29 kB
+dist/assets/index-D-BS2vGO.css                         0.75 kB │ gzip:   0.32 kB
+dist/assets/index-2FA8iHsS.css                         0.85 kB │ gzip:   0.42 kB
+dist/assets/Overview-BUFG5yrl.css                      0.90 kB │ gzip:   0.36 kB
+dist/assets/el-scrollbar-BWxh-h6K.css                  1.33 kB │ gzip:   0.44 kB
+dist/assets/index-BISknPjX.css                         1.35 kB │ gzip:   0.41 kB
+dist/assets/404-pz522puP.css                           1.58 kB │ gzip:   0.44 kB
+dist/assets/el-loading-C5IeuJ3V.css                    1.61 kB │ gzip:   0.55 kB
+dist/assets/el-tooltip-D1i0e6ba.css                    2.21 kB │ gzip:   0.52 kB
+dist/assets/Abnormal-BhCnIJJ3.css                      3.51 kB │ gzip:   0.88 kB
+dist/assets/el-dialog-5yN3JgMe.css                     3.57 kB │ gzip:   0.99 kB
+dist/assets/el-form-item-BWkJzdQ_.css                  4.75 kB │ gzip:   0.89 kB
+dist/assets/format-DljBBxJR.css                        5.52 kB │ gzip:   0.87 kB
+dist/assets/el-checkbox-DIj50LEB.css                   6.53 kB │ gzip:   1.21 kB
+dist/assets/base-B0cSg007.css                          8.17 kB │ gzip:   2.04 kB
+dist/assets/el-menu-item-CZugV5oq.css                 10.68 kB │ gzip:   1.83 kB
+dist/assets/el-input-tPmZxDKr.css                     10.83 kB │ gzip:   1.74 kB
+dist/assets/index-D5uO_epR.css                        11.14 kB │ gzip:   2.02 kB
+dist/assets/el-button-DhOMi8yW.css                    15.61 kB │ gzip:   1.94 kB
+dist/assets/index-DgCv0Kh-.css                        15.92 kB │ gzip:   2.83 kB
+dist/assets/el-table-column-CKoPG0Y8.css              18.06 kB │ gzip:   2.87 kB
+dist/assets/index-CxmrQ0iJ.css                        19.69 kB │ gzip:   3.20 kB
+dist/assets/index-DOnTRZ9K.css                        20.52 kB │ gzip:   3.56 kB
+dist/assets/index-DVLf_jan.css                        33.80 kB │ gzip:   5.07 kB
+dist/assets/el-card-mBcy1iGr.css                      40.03 kB │ gzip:   4.19 kB
+dist/assets/index-N22kbtHd.css                       352.02 kB │ gzip:  48.98 kB
+dist/assets/_plugin-vue_export-helper-DlAUqK2U.js      0.09 kB │ gzip:   0.10 kB
+dist/assets/validate-B7yQmWqi.js                       0.19 kB │ gzip:   0.15 kB
+dist/assets/index-BaWzQlPV.js                          0.42 kB │ gzip:   0.35 kB
+dist/assets/Abnormal-Bz7K3mMh.js                       0.46 kB │ gzip:   0.24 kB
+dist/assets/format-vZnDFlOS.js                         0.59 kB │ gzip:   0.43 kB
+dist/assets/404-BMd-MZ-C.js                            0.63 kB │ gzip:   0.48 kB
+dist/assets/index-B1o2SIKA.js                          1.18 kB │ gzip:   0.60 kB
+dist/assets/index-D_QbvkXs.js                          1.51 kB │ gzip:   0.74 kB
+dist/assets/websocket-ZqkN2bGm.js                      3.69 kB │ gzip:   1.38 kB
+dist/assets/AbnormalEvent-eNpDA4zo.js                  5.09 kB │ gzip:   1.93 kB
+dist/assets/DeviceStatus-DmKTGXWY.js                   5.44 kB │ gzip:   1.93 kB
+dist/assets/Overview-To4wM8Cy.js                       6.08 kB │ gzip:   2.25 kB
+dist/assets/index-Dlz7Pw0D.js                          6.21 kB │ gzip:   2.03 kB
+dist/assets/index-DHl9iFL4.js                          6.70 kB │ gzip:   2.71 kB
+dist/assets/index-Bt9pyNxe.js                         11.45 kB │ gzip:   4.61 kB
+dist/assets/index-FlYDHuFh.js                         12.25 kB │ gzip:   4.10 kB
+dist/assets/index-CF1SQQQ4.js                         14.80 kB │ gzip:   4.53 kB
+dist/assets/user-0GXKAgEo.js                          37.84 kB │ gzip:  15.38 kB
+dist/assets/index-jgzQglKu.js                        391.92 kB │ gzip: 120.01 kB
+dist/assets/statistics-9LYdQMb3.js                 1,036.52 kB │ gzip: 343.51 kB
+dist/assets/index-Ct9-Nnxx.js                      1,140.04 kB │ gzip: 366.16 kB
+✓ built in 13.79s

@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import NProgress from 'nprogress'
+import request from '@/api/request'
+import { useUserStore } from '@/stores/user'
 import 'nprogress/nprogress.css'
 
 // 路由配置
@@ -35,11 +37,15 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/monitor/index.vue'),
         meta: { title: '实时监控', icon: 'VideoCamera' },
       },
+      { path:'/user', name:'Users', component:() => import('@/views/user/index.vue'), meta:{title:'用户管理',icon:'User',admin:true} },
+      { path:'/recordings', name:'Recordings', component:()=>import('@/views/recordings/index.vue'), meta:{title:'录像查询',icon:'VideoCamera'} },
+      { path:'/risk-templates', name:'RiskTemplates', component:()=>import('@/views/riskTemplates/index.vue'), meta:{title:'告警策略设置',icon:'Setting',admin:true} },
+      { path:'/notifications' , name:'Notifications', component:()=>import('@/views/notifications/index.vue'), meta:{title:'通知发送记录',icon:'Bell',admin:true} },
       {
         path: '/camera',
         name: 'Camera',
         component: () => import('@/views/camera/index.vue'),
-        meta: { title: '摄像头管理', icon: 'Camera' },
+        meta: { title: '摄像头管理', icon: 'Camera', admin: true },
       },   
       {
         path: '/Abnormal',
@@ -93,7 +99,7 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   // 开启进度条
   NProgress.start()
 
@@ -102,9 +108,13 @@ router.beforeEach((to, from, next) => {
 
   // 判断是否需要登录权限
   if (to.path !== '/login') {
-    // 获取用户信息
-    const userInfo = localStorage.getItem('userInfo')
-    if (!userInfo) {
+    let userInfo: string
+    try {
+      const user = await request.get('/user/current')
+      useUserStore().setUserInfo(user)
+      userInfo = JSON.stringify(user)
+    } catch {
+      useUserStore().clearUserInfo()
       next('/login')
       return
     }
@@ -128,4 +138,4 @@ router.afterEach(() => {
   NProgress.done()
 })
 
-export default router 
+export default router

@@ -12,6 +12,7 @@ import java.util.Map;
 @Data
 @Schema(description = "异常事件统计数据")
 public class AbnormalEventStatisticsVO {
+    private String timeBasis="CREATED_AT_ASIA_SHANGHAI";
 
     @Schema(description = "总事件数")
     private Integer totalCount;

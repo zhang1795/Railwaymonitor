@@ -1,0 +1,34 @@
+{
+  "queueSize": 8192,
+  "businessConsecutiveClips": [
+    {
+      "bytes": 51225171,
+      "decodeExit": 0,
+      "decoderErrorBytes": 0,
+      "sha256Matches": true
+    },
+    {
+      "bytes": 51225171,
+      "decodeExit": 0,
+      "decoderErrorBytes": 0,
+      "sha256Matches": true
+    },
+    {
+      "bytes": 46350086,
+      "decodeExit": 0,
+      "decoderErrorBytes": 0,
+      "sha256Matches": true
+    }
+  ],
+  "guardianHealthy": true,
+  "supervisedServices": [
+    "backend",
+    "flask",
+    "detector",
+    "demo_stream",
+    "user_stream"
+  ],
+  "recordingPendingAtSample": 0,
+  "recordingFailedAtSample": 0,
+  "validatedAfterUtc": "2026-11-11 04:52:53"
+}

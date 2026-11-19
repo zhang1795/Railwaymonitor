@@ -1,184 +1,115 @@
+"""SORT association with frame-local attributes and explicit confirmation."""
 import numpy as np
-import torch
-
-from utils.metrics import box_iou
+import math
+import time
 from scipy.optimize import linear_sum_assignment
-from kalman import KalmanBoxTracker
-np.random.seed(0)
+from detections import Detection, TrackResult
+from kalman import KalmanBoxTracker, valid_bbox
 
-
-# 匈牙利匹配
 def linear_assignment(cost_matrix):
-    x, y = linear_sum_assignment(cost_matrix)
-    return np.array(list(zip(x, y)))
+    rows, cols = linear_sum_assignment(cost_matrix)
+    return np.column_stack((rows, cols)).astype(int)
 
-
-# 用于计算det中的目标框和卡尔曼滤波追踪的目标框的iou
 def iou_batch(det_box, track_box2):
-    # 将list转为numpy格式
-    det_box = np.array(det_box)
-    track_box2 = np.array(track_box2)
-    # 再将numpy转为tensor，速度更快
-    det_box = torch.from_numpy(det_box)
-    # 注意这里box2
-    track_box2 = torch.from_numpy(track_box2[:, 0:4])
-    # 调库算iou
-    iou = box_iou(det_box, track_box2)
-    return np.array(iou)
+    a = np.asarray(det_box, dtype=float).reshape(-1, 4)
+    b = np.asarray(track_box2, dtype=float)
+    b = np.empty((0, 4)) if not b.size else b[:, :4]
+    inter = np.maximum(0, np.minimum(a[:, None, 2:], b[None, :, 2:])
+                       - np.maximum(a[:, None, :2], b[None, :, :2])).prod(2)
+    areas_a = (a[:, 2:] - a[:, :2]).prod(1)
+    areas_b = (b[:, 2:] - b[:, :2]).prod(1)
+    union = areas_a[:, None] + areas_b[None, :] - inter
+    return np.divide(inter, union, out=np.zeros_like(inter), where=union > 0)
 
-
-def associate_detections_to_trackers(detections, trackers, iou_threshold=0.3):
-
-    # 初始化时，trackers为空，直接返回空匹配结果
-    if len(trackers) == 0:
-        return np.empty((0, 2), dtype=int), np.arange(len(detections)), np.empty((0, 5), dtype=int)
-
-    # 这里trackers多一列ID列
-    iou_matrix = iou_batch(detections, trackers)
-    # [[0.73691421 0.         0.         0.        ]
-    #  [0.         0.89356082 0.         0.        ]
-    #  [0.         0.         0.76781823 0.        ]]
-
-    if min(iou_matrix.shape) > 0:
-
-        a = (iou_matrix > iou_threshold).astype(np.int32)
-        # [[1 0 0 0]
-        #  [0 1 0 0]
-        #  [0 0 1 0]]
-
-        # print(a.sum(1)): [1 1 1]
-        # print(a.sum(0)): [1 1 1 0]
-        # a.sum(1)表示将矩阵所有列累加，a.sum(0)表示将矩阵所有行累加
-
-        # 如果大于0.3的位置恰好一一对应，可直接得到匹配结果，否则利用匈牙利算法进行匹配
-        if a.sum(1).max() == 1 and a.sum(0).max() == 1:
-
-            matched_indices = np.stack(np.where(a), axis=1)
-            # [[0 0]
-            #  [1 1]
-            #  [2 2]]
-        else:
-            matched_indices = linear_assignment(-iou_matrix)
+def associate_detections_to_trackers(detections, trackers, iou_threshold=.3):
+    if not len(detections) or not len(trackers):
+        return np.empty((0, 2), dtype=int), np.arange(len(detections)), np.arange(len(trackers))
+    iou = iou_batch(detections, trackers)
+    admissible = iou >= iou_threshold
+    if admissible.sum(1).max() == 1 and admissible.sum(0).max() == 1:
+        pairs = np.column_stack(np.where(admissible))
     else:
-        matched_indices = np.empty(shape=(0, 2))
+        pairs = linear_assignment(-iou)
+    matched = np.array([p for p in pairs if iou[p[0], p[1]] >= iou_threshold], dtype=int).reshape(-1, 2)
+    return (matched, np.setdiff1d(np.arange(len(detections)), matched[:, 0]),
+            np.setdiff1d(np.arange(len(trackers)), matched[:, 1]))
 
-    unmatched_detections = []
-    for d, det in enumerate(detections):
-        if d not in matched_indices[:, 0]:
-            unmatched_detections.append(d)
-
-    unmatched_trackers = []
-    for t, trk in enumerate(trackers):
-        if t not in matched_indices[:, 1]:
-            unmatched_trackers.append(t)
-
-    # print(unmatched_detections) : []
-    # print(unmatched_trackers) : [3]
-
-    # 匈牙利算法匹配出的结果，未必符合IOU大于0.3，需要再进行一次筛选
-    # 如果匹配后的IOU数值依旧很小，则同样默认为未匹配成功
-    matches = []
-    for m in matched_indices:
-        if iou_matrix[m[0], m[1]] < iou_threshold:
-            unmatched_detections.append(m[0])
-            unmatched_trackers.append(m[1])
-        else:
-            matches.append(m.reshape(1, 2))
-
-    if len(matches) == 0:
-        matches = np.empty((0, 2), dtype=int)
-    else:
-        matches = np.concatenate(matches, axis=0)
-
-    # print(matches): [[0 0] [1 1] [2 2]]
-    # print(np.array(unmatched_detections)): []
-    # print(np.array(unmatched_trackers)): [3]
-
-    return matches, np.array(unmatched_detections), np.array(unmatched_trackers)
-
-
-class Sort(object):
-
-    def __init__(self, max_age=1, min_hits=3, iou_threshold=0.3):
-
-        self.max_age = max_age    # 1
-        self.min_hits = min_hits    # 3
-        self.iou_threshold = iou_threshold    # 0.3
-
-        # trackers列表中存储的每一个元素，都是一个特定目标物体的Kalman滤波过程
+class Sort:
+    def __init__(self, max_age=1, min_hits=3, iou_threshold=.3, max_idle_seconds=None):
+        if max_age < 0 or min_hits < 1 or not 0 <= iou_threshold <= 1:
+            raise ValueError('invalid SORT configuration')
+        self.max_age, self.min_hits, self.iou_threshold = max_age, min_hits, iou_threshold
         self.trackers = []
+        self._next_id = 1
+        self.max_idle_seconds = max_idle_seconds
+        self._timestamp = None
+        if max_idle_seconds is not None and (not math.isfinite(max_idle_seconds) or max_idle_seconds<=0):
+            raise ValueError('invalid time-based tracking window')
 
-    def update(self, dets=np.empty((0, 4)), cls=np.empty(0)):
+    def update_detections(self, detections, timestamp=None):
+        stamp = time.monotonic() if timestamp is None else float(timestamp)
+        if not math.isfinite(stamp) or (self._timestamp is not None and stamp<self._timestamp):
+            raise ValueError('tracking clock regressed')
+        dt = 1. if self.max_idle_seconds is None or self._timestamp is None else max(.001,stamp-self._timestamp)
+        self._timestamp = stamp
+        detections = [d for d in detections if d.valid()]
+        alive, predictions = [], []
+        for track in self.trackers:
+            if self.max_idle_seconds is not None and stamp-track.last_match_at>self.max_idle_seconds:
+                continue
+            pos = track.predict(dt)[0]
+            if valid_bbox(pos):
+                alive.append(track)
+                predictions.append(pos)
+        self.trackers = alive
+        boxes = np.array([d.bbox for d in detections], dtype=float).reshape(-1, 4)
+        predicted = np.array(predictions, dtype=float).reshape(-1, 4)
+        matched, unmatched, _ = associate_detections_to_trackers(boxes, predicted, self.iou_threshold)
+        for di, ti in matched:
+            detection = detections[di]
+            track = self.trackers[ti]
+            track.update(detection.bbox, detection.class_name)
+            track.detection = detection
+            track.last_match_at = stamp
+        for index in unmatched:
+            detection = detections[index]
+            track = KalmanBoxTracker(detection.bbox, detection.class_name, self._next_id)
+            self._next_id += 1
+            track.detection = detection
+            track.last_match_at = stamp
+            self.trackers.append(track)
+        results, survivors = [], []
+        for track in self.trackers:
+            if self.max_idle_seconds is None and track.time_since_update > self.max_age:
+                continue
+            box = track.get_state()[0]
+            if not valid_bbox(box):
+                continue
+            survivors.append(track)
+            track.confirmed = track.confirmed or track.hit_streak >= self.min_hits
+            if track.time_since_update == 0 and track.confirmed:
+                d = track.detection
+                results.append(TrackResult(tuple(float(x) for x in box), track.id,
+                                           d.class_id, d.class_name, d.confidence, d.detection_index))
+        self.trackers = survivors
+        return results
 
-        # det_s是当前帧目标检测结果，默认初始值为np.empty((0, 4))，代表当前帧没有检测到任何目标物体
-        # trk_s存储Kalman滤波器对当前帧的位置预测结果
-
-        trks = np.zeros((len(self.trackers), 5))
-        to_del = []
-
-        # ret是最终返回值，存储当前帧的目标跟踪结果
-        ret = []
-
-        # 类似c++中的引用，每次trk_s中的trk值被修改，trk_s整个数组也会被修改
-        for t, trk in enumerate(trks):
-
-            # 对每个轨迹调用Kalman滤波predict函数，预测当前帧的位置
-            pos = self.trackers[t].predict()[0]
-            # [286.552 154.138 357.889 321.466]
-
-            trk[:] = [pos[0], pos[1], pos[2], pos[3], 1]
-
-            # np.isnan()是判断是否是空值
-            # np.any，或的关系，只要有一个满足，则输出为TRUE
-            if np.any(np.isnan(pos)):
-                to_del.append(t)
-
-        # np.ma.masked_invalid函数：当数组a中某些元素为无效值(NaNs or inf)时，则将无效值的元素设置为mask(–)
-        # np.ma.compress_rows函数：返回被屏蔽完成以后的数组
-        trks = np.ma.compress_rows(np.ma.masked_invalid(trks))
-        for t in reversed(to_del):
-            self.trackers.pop(t)
-
-        # 将Kalman滤波器预测出来的位置，与当前检测出的位置，进行匹配
-        matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets, trks, self.iou_threshold)
-
-        # 如果匹配成功，则用观测信息进一步更新Kalman滤波器状态
-        for m in matched:
-            self.trackers[m[1]].update(dets[m[0]])
-
-        # 对于未匹配上的检测结果，默认为出现新轨迹，初始化创建新的Kalman滤波器
-        for i in unmatched_dets:
-            trk = KalmanBoxTracker(dets[i], cls[i])
-            self.trackers.append(trk)
-
-        # 对当前tracks列表中的Kalman滤波器依次检验，销毁无效的轨迹，返回当前帧的目标跟踪结果
-        i = len(self.trackers)
-        for trk in reversed(self.trackers):
-
-            # 以逆序方式，从倒数第一个开始遍历tracks列表中的Kalman滤波器
-            d = trk.get_state()[0]
-
-            # trk.time_since_update<1表示，该轨迹状态自上次未被匹配到，经过的帧数小于1，也就是当前帧成功匹配
-            # trk.hit_streak>=表示，自上次未被匹配到，连续匹配的帧数大于等于3
-            if (trk.time_since_update < 1) and (trk.hit_streak > self.min_hits):
-                ret.append(np.concatenate((d, [trk.id], [trk.cls])).reshape(1, -1))
-
-            i -= 1
-
-            # 如果连续未被匹配到大于等于2帧，删除销毁无效的轨迹
-            if trk.time_since_update > self.max_age:
-                self.trackers.pop(i)
-
-        if len(ret) > 0:
-
-            # 返回的是，当前帧被认为真正有效的轨迹坐标、对应ID
-            # [[542.825 206.921 566.939 251.902   4.   ]
-            #  [456.542 213.434 481.675 270.969   3.   ]
-            #  [222.571 179.989 256.338 288.916   2.   ]
-            #  [286.552 154.138 357.889 321.466   1.   ]]
-
-            return np.concatenate(ret)
-
-        return np.empty((0, 5))
-
-
+    def update(self, dets=None, cls=None, scores=None):
+        """Legacy rows: xyxy, id, class name, including empty shape (0,6)."""
+        boxes = np.asarray([] if dets is None else dets, dtype=float)
+        if boxes.size == 0:
+            boxes = np.empty((0, 4))
+        if boxes.ndim != 2 or boxes.shape[1] not in (4, 5):
+            raise ValueError('detections must have shape (N,4) or (N,5)')
+        classes = [] if cls is None else list(cls)
+        if len(classes) != len(boxes):
+            raise ValueError('box/class lengths differ')
+        if scores is None:
+            scores = boxes[:, 4] if boxes.shape[1] == 5 else np.ones(len(boxes))
+        if len(scores) != len(boxes):
+            raise ValueError('box/score lengths differ')
+        records = [Detection(tuple(b[:4]), -1, str(c), float(s), i)
+                   for i, (b, c, s) in enumerate(zip(boxes, classes, scores))]
+        results = self.update_detections(records)
+        return np.array([list(d.bbox) + [d.track_id, d.class_name] for d in results],
+                        dtype=object).reshape(-1, 6)

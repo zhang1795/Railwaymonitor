@@ -1,5 +1,11 @@
 <template>
   <div class="Abnormal">
+    <el-alert :type="alarmState.healthy ? 'warning' : 'info'" :closable="false" show-icon>
+      <template #title>{{ alarmState.healthy ? `有 ${alarmState.unreadCount} 条未读提醒（同一事件可重复提醒）` : '提醒状态未知，正在重试' }}</template>
+      列表不会自动替换正在查看或编辑的内容。
+      <el-button link type="primary" @click="handleQuery">刷新当前列表</el-button>
+      <el-button link type="primary" @click="showUnread">查看全部未读</el-button>
+    </el-alert>
     <!-- 工具栏 -->
     <div class="toolbar">
       <div class="left">
@@ -20,6 +26,7 @@
 
     <!-- 搜索表单 -->
     <el-form :model="queryParams" inline class="search-form">
+      <el-form-item><el-checkbox v-model="queryParams.unreadOnly" @change="handleQuery">仅看未读</el-checkbox></el-form-item>
       <el-form-item label="摄像头">
         <el-select v-model="queryParams.cameraId" placeholder="请选择摄像头" clearable class="form-select">
           <el-option v-for="camera in cameraOptions" :key="camera.id" :label="camera.name" :value="camera.id" />
@@ -68,6 +75,8 @@
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="cameraName" label="摄像头" min-width="120" show-overflow-tooltip />
       <el-table-column prop="location" label="位置" min-width="120" show-overflow-tooltip />
+      <el-table-column label="类别" min-width="120"><template #default="{row}">{{ row.type || row.detectedType || '待核验' }}</template></el-table-column>
+      <el-table-column label="事件性质 / 观测结论" min-width="210"><template #default="{row}"><el-tag :type="row.risk?.kind==='RISK' ? 'danger' : 'info'">{{ eventKind(row.risk?.kind) }}</el-tag><br/>{{ riskStatus(row) }}<br/><small>{{utcTime(row.risk?.last_observed)}}</small></template></el-table-column>
       <el-table-column prop="level" label="异常等级" width="100" align="center">
         <template #default="{ row }">
           <el-tag :type="getAbnormalLevelType(row.level)">
@@ -134,7 +143,15 @@
     <!-- 详情抽屉 -->
     <el-drawer v-model="detailVisible" title="异常事件详情" size="600px">
       <template #default>
+        <el-button :loading="detailLoading" @click="detail && handleDetail(detail)">刷新详情</el-button>
+        <el-alert :title="eventKind(detail?.risk?.kind)+' · '+riskStatus(detail)" :type="detail?.risk?.state==='INTERRUPTED' ? 'warning' : 'info'" :closable="false" />
         <div class="detail">
+          <div class="detail-item"><span class="label">自动检测：</span><span class="value">{{ detail?.detectedType || '未知' }} · 类别历史分数峰值 {{ detail?.confidence!=null ? (detail.confidence*100).toFixed(1)+'%' : '未知' }}（分数不等于风险等级）</span></div>
+          <div class="detail-item"><span class="label">记录类别：</span><span class="value">{{ detail?.type || '尚未填写' }} · {{detail?.manualOverride ? '人工编辑保留的类别' : '自动记录，尚未人工核验'}}</span></div>
+          <div class="detail-item"><span class="label">观测状态：</span><span class="value">{{ detectionLabel(detail?.detectionState) }}</span></div>
+          <div class="detail-item"><span class="label">首末观测：</span><span class="value">{{ formatDateTime(detail?.firstSeen) }} 至 {{ formatDateTime(detail?.lastSeen) }}</span></div>
+          <div class="detail-item"><span class="label">规则判定：</span><span class="value">{{ policyDescription }}<br/>{{ associationLabel(detail?.risk?.association) }} · 已关联 {{ insight?.sources.length || 0 }} 段轨迹</span></div>
+          <div class="detail-item"><span class="label">风险等级：</span><span class="value">{{ detail?.risk?.risk_level || '-' }} · 判定开始 {{ utcTime(detail?.risk?.risk_since) }}<br/>最后有效观测 {{ utcTime(detail?.risk?.last_observed) }}</span></div>
           <div class="detail-item">
             <span class="label">摄像头：</span>
             <span class="value">{{ detail?.cameraName }}</span>
@@ -166,11 +183,16 @@
           <div class="detail-item video-map-item">
             <!-- 现场视频区域 -->
             <div class="content-group">
-              <span class="label">现场视频：</span>
+              <span class="label">事发截图：</span>
               <div class="value video-container">
-                <el-image v-if="detail?.imageUrl" :src="detail.imageUrl" :preview-src-list="[detail.imageUrl]"
-                  fit="cover" class="image" />
-                <span v-else>暂无视频</span>
+                <div v-for="image in insight?.evidence.images" :key="image.id">
+                  <el-image v-if="image.state==='READY'" :src="image.url" :preview-src-list="[image.url]" fit="contain" class="image"><template #error>截图不可用或校验失败，请刷新核对</template></el-image>
+                  <span v-else>截图文件不可用</span><small>{{ utcTime(image.capturedAt) }}</small>
+                </div>
+                <span v-if="!insight?.evidence.images.length">{{ insight?.evidence.configured ? '尚无已上传截图；证据缺失不代表未发生告警' : '证据上传未配置' }}</span>
+                <div v-for="worker in insight?.evidenceWorker" :key="worker.reported_at"><small>最近上报：待传 {{ worker.pending_events }}，跳过 {{worker.skipped}}；{{worker.error || '未报告上传异常'}}（{{utcTime(worker.reported_at)}}）</small></div>
+                <div v-for="clip in insight?.recordings" :key="clip.id"><small>{{utcTime(clip.started_at)}} → {{utcTime(clip.ended_at)}}</small><RecordingPlayer v-if="clip.state==='READY'" :clip="clip"/><span v-else>{{clip.state==='EXPIRED'?'录像已按保留策略过期':'录像暂不可用'}}</span></div>
+                <p v-if="!insight?.recordings?.length">暂无已登记的相关历史录像；当前直播不能代替事发证据。</p>
               </div>
             </div>
             <!-- 地图区域（新增“地图”标签） -->
@@ -198,6 +220,12 @@
             <span class="label">处理结果：</span>
             <span class="value">{{ detail?.handleResult || '-' }}</span>
           </div>
+          <el-collapse>
+            <el-collapse-item title="风险状态变化" name="risk"><el-timeline><el-timeline-item v-for="(item,index) in insight?.transitions" :key="index" :timestamp="utcTime(item.observed_at)">{{riskLabel(item.to_state,detail?.risk?.kind)}} · {{transitionReason(item.reason)}}</el-timeline-item></el-timeline></el-collapse-item>
+            <el-collapse-item title="提醒历史（已读与处置分别记录）" name="notices"><div v-for="(item,index) in insight?.notices" :key="index">{{noticeLabel(item.kind)}} · {{utcTime(item.created_at)}}</div></el-collapse-item>
+            <el-collapse-item title="外部通知状态" name="delivery"><p>Webhook：{{insight?.notificationConfiguration?.webhookConfigured?'已配置':'未配置'}}；短信：{{insight?.notificationConfiguration?.smsConfigured?'已配置':'未配置'}}。站内已读与外部送达分别记录。</p><div v-for="item in insight?.deliveries" :key="item.id">{{item.channel}} · {{deliveryLabel(item.status)}} · {{utcTime(item.updated_at)}} · {{item.error}}</div></el-collapse-item>
+            <el-collapse-item title="人工处置记录" name="handling"><div v-for="(item,index) in insight?.handling" :key="index">{{utcTime(item.created_at)}} · 用户 {{item.user_id}} · {{formatStatus(item.before_status)}} → {{formatStatus(item.after_status)}} · {{item.result || '状态更新'}}</div></el-collapse-item>
+          </el-collapse>
         </div>
       </template>
     </el-drawer>
@@ -223,6 +251,11 @@
             <el-option v-for="item in cameras" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
+        <el-form-item label="核验类别" prop="type">
+          <el-select v-model="editForm.type" placeholder="请选择核验类别">
+            <el-option v-for="name in abnormalTypes" :key="name" :label="name" :value="name" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="位置" prop="location">
           <el-input v-model="editForm.location" placeholder="请输入位置" />
         </el-form-item>
@@ -232,11 +265,7 @@
               :value="level" />
           </el-select>
         </el-form-item>
-        <el-form-item label="处理状态" prop="status">
-          <el-select v-model="editForm.status" placeholder="请选择处理状态">
-            <el-option v-for="status in [0, 1, 2]" :key="status" :label="formatStatus(status)" :value="status" />
-          </el-select>
-        </el-form-item>
+
         <el-form-item label="事件描述" prop="description">
           <el-input v-model="editForm.description" type="textarea" :rows="4" placeholder="请输入事件描述" />
         </el-form-item>
@@ -250,27 +279,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
+import { alarmInbox } from '@/stores/alarmInbox'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import type { AbnormalEvent, AbnormalEventQueryParams } from '@/types/Abnormal'
 import type { Camera } from '@/types/camera'
 import { getAbnormalEventList, getAbnormalEventById, handleAbnormalEvent, updateAbnormalEventStatus, deleteAbnormalEvent, updateAbnormalEvent, batchDeleteAbnormalEvents, createAbnormalEvent } from '@/api/Abnormal'
+import {getAlarmInsight} from '@/api/Abnormal'
+import type {AlarmInsight} from '@/api/Abnormal'
+import {eventKind,riskLabel,riskAt,detectionLabel,associationLabel,transitionReason,noticeLabel,deliveryLabel,utcTime} from '@/utils/riskDisplay'
+import {ruleSummary} from '@/utils/ruleSummary'
 import { getCameraList } from '@/api/camera'
 import { formatDateTime, formatAbnormalLevel, formatStatus } from '@/utils/format'
 import Pagination from '@/components/Pagination/index.vue'
 import type { PageQuery } from '@/types/common'
 import MapComponent from '@/components/Map/index.vue'
+import RecordingPlayer from '@/components/RecordingPlayer/index.vue'
 
 // 定义地图组件ref
 const mapRef = ref<InstanceType<typeof MapComponent> | null>(null)
 
 
 const userStore = useUserStore()
+const route = useRoute()
+const alarmState = alarmInbox.state
+const displayClock=ref(Date.now())
+const displayTicker=setInterval(()=>{displayClock.value=Date.now()},1000)
+onBeforeUnmount(()=>clearInterval(displayTicker))
+const riskStatus=(event?:AbnormalEvent|null)=>riskAt(event?.risk?.state,event?.risk?.kind,event?.risk?.last_observed,displayClock.value)
+let disposed=false
+let detailRequest=0
+let listRequest=0
+onBeforeUnmount(()=>{disposed=true})
 
 // 查询参数
 const queryParams = reactive<AbnormalEventQueryParams>({
+  unreadOnly: route.query.unread === '1',
   current: 1,
   size: 10,
   cameraId: undefined,
@@ -308,6 +355,7 @@ const getCameras = async () => {
 
 // 获取数据列表
 const getList = async () => {
+  const sequence=++listRequest
   loading.value = true
   try {
     // 处理时间范围
@@ -319,12 +367,13 @@ const getList = async () => {
       queryParams.endTime = undefined
     }
     const res = await getAbnormalEventList(queryParams)
+    if(disposed || sequence!==listRequest)return
     list.value = res.records
     total.value = res.total
   } catch (error) {
     console.error(error)
   } finally {
-    loading.value = false
+    if(!disposed && sequence===listRequest)loading.value = false
   }
 }
 
@@ -340,6 +389,7 @@ const handleReset = () => {
   Object.assign(queryParams, {
     current: 1,
     size: 10,
+    unreadOnly: false,
     cameraId: undefined,
     location: undefined,
     level: undefined,
@@ -380,11 +430,31 @@ const getStatusType = (status: number | undefined | null): 'success' | 'warning'
 // 详情
 const detail = ref<AbnormalEvent | null>(null)
 const detailVisible = ref(false)
+const detailLoading=ref(false),insight=ref<AlarmInsight>()
+const policyDescription=computed(()=>{
+  const item=insight.value?.risk[0]
+  if(!item || item.kind==='LEGACY')return '历史数据，没有可核验的区域规则快照'
+  try{
+    if(item.association==='LATE_SNAPSHOT_REVIEW' && item.session_policy)
+      return '前序观测不完整，本次记录为待核验观察。当时的会话配置：'+ruleSummary(JSON.parse(item.session_policy))
+    const policy=JSON.parse(item.policy)
+    return ruleSummary(policy)
+  }catch{return '规则快照不可读，请联系管理员核查'}
+})
 
-const handleDetail = async (row: AbnormalEvent) => {
-  const res = await getAbnormalEventById(row.id)
+const handleDetail = async (row: {id:number|string}) => {
+  const sequence=++detailRequest
+  detailLoading.value=true
+  let res:AbnormalEvent,extra:AlarmInsight
+  try{[res,extra]=await Promise.all([getAbnormalEventById(row.id),getAlarmInsight(row.id)])}
+  finally{if(sequence===detailRequest)detailLoading.value=false}
+  if(disposed || sequence!==detailRequest)return
+  insight.value=extra
   detail.value = res
   detailVisible.value = true
+  // Only the specific successfully opened event is acknowledged.
+  if(res.unreadNoticeIds?.length)void alarmInbox.markNotificationsRead(res.unreadNoticeIds).catch(()=>{})
+  else if(res.unreadNoticeIds===undefined)void alarmInbox.markRead([String(row.id)]).catch(() => {})
 
   // ========== 新增：地图定位逻辑 ==========
   // 根据摄像头ID匹配摄像头信息
@@ -421,6 +491,7 @@ const handleFormRef = ref<FormInstance>()
 const handleVisible = ref(false)
 const submitLoading = ref(false)
 const handleForm = reactive({
+  version: 0,
   id: 0,
   handlerId: 0,
   handleResult: '',
@@ -430,6 +501,7 @@ const handleRules = {
 }
 
 const handleProcess = (row: AbnormalEvent) => {
+  handleForm.version = row.version ?? 0
   handleForm.id = row.id
   handleForm.handlerId = userStore.userInfo?.id || 0
   handleForm.handleResult = ''
@@ -437,11 +509,13 @@ const handleProcess = (row: AbnormalEvent) => {
 }
 
 const submitHandle = async () => {
-  if (!handleFormRef.value) return
-  await handleFormRef.value.validate()
+  if (!handleFormRef.value || submitLoading.value || disposed) return
   submitLoading.value = true
   try {
-    await handleAbnormalEvent(handleForm)
+    await handleFormRef.value.validate()
+    const submitted={...handleForm}
+    await handleAbnormalEvent(submitted)
+    if(disposed || submitted.id!==handleForm.id)return
     ElMessage.success('处理成功')
     handleVisible.value = false
     getList()
@@ -453,17 +527,7 @@ const submitHandle = async () => {
 }
 
 // 完成
-const handleComplete = (row: AbnormalEvent) => {
-  ElMessageBox.confirm('确认完成该异常事件的处理？', '提示', {
-    type: 'warning',
-  })
-    .then(async () => {
-      await updateAbnormalEventStatus(row.id, 2)
-      ElMessage.success('操作成功')
-      getList()
-    })
-    .catch(() => { })
-}
+const handleComplete = (row: AbnormalEvent) => handleProcess(row)
 
 // 选中的记录ID
 const selectedIds = ref<number[]>([])
@@ -471,7 +535,10 @@ const selectedIds = ref<number[]>([])
 // 编辑表单
 const editFormRef = ref<FormInstance>()
 const editVisible = ref(false)
+const abnormalTypes = ['防撞设备','气球','牛','水害','滑坡','违规建筑','风筝','落石','鸟巢','广告牌','坑洞','垃圾','工人']
 const editForm = reactive({
+  version: 0,
+  type: '',
   id: 0,
   cameraId: undefined,
   location: '',
@@ -499,11 +566,13 @@ const handleEdit = (row: AbnormalEvent) => {
 
 // 提交编辑
 const submitEdit = async () => {
-  if (!editFormRef.value) return
-  await editFormRef.value.validate()
+  if (!editFormRef.value || submitLoading.value || disposed) return
   submitLoading.value = true
   try {
-    await updateAbnormalEvent(editForm)
+    await editFormRef.value.validate()
+    const submitted={...editForm}
+    await updateAbnormalEvent(submitted)
+    if(disposed || submitted.id!==editForm.id)return
     ElMessage.success('保存成功')
     editVisible.value = false
     getList()
@@ -562,9 +631,25 @@ const handleCreate = () => {
   ElMessage.info('新增事件功能开发中')
 }
 
-onMounted(() => {
-  getCameras()
+const showUnread = () => {
+  timeRange.value=undefined
+  Object.assign(queryParams,{current:1,size:10,unreadOnly:true,cameraId:undefined,location:undefined,level:undefined,status:undefined,startTime:undefined,endTime:undefined})
   getList()
+}
+const openNotice = async (id:unknown) => {
+  if(typeof id==='string' && /^[1-9]\d{0,18}$/.test(id)) {
+    try { await handleDetail({id}) } catch { /* Request layer explains failure. */ }
+  }
+}
+let mounted=false
+watch(()=>route.query.noticeId,id=>{if(mounted)void openNotice(id)})
+watch(()=>route.query.unread,value=>{if(mounted && value==='1')showUnread()})
+onMounted(async () => {
+  await getCameras()
+  if(disposed)return
+  getList()
+  mounted=true
+  await openNotice(route.query.noticeId)
 })
 </script>
 

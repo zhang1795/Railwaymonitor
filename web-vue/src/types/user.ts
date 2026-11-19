@@ -1,5 +1,6 @@
 // 用户信息
 export interface UserInfo {
+  passwordChangeRequired?: boolean
   id: number
   username: string
   realName: string

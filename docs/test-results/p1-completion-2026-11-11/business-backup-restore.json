@@ -1,0 +1,7 @@
+{
+  "businessBackupRestoredInIsolatedServer": true,
+  "originalLegacyCount": 84,
+  "historicalHumanRowsPreserved": 1254,
+  "riskRulesPreserved": true,
+  "restoredTables": 22
+}

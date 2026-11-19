@@ -1,0 +1,26 @@
+{
+  "http": {
+    "3000": 200,
+    "18080": 200,
+    "5000": 200,
+    "18083": 200
+  },
+  "monitoring": [
+    {
+      "cameraId": 21,
+      "enabled": false,
+      "state": "STOPPED",
+      "reportedPending": 1
+    },
+    {
+      "cameraId": 22,
+      "enabled": true,
+      "state": "RUNNING",
+      "reportedPending": 0
+    }
+  ],
+  "workerPending": 0,
+  "businessRejectedEvents": 0,
+  "originalHistoricalAlarms": 84,
+  "isolatedTestServicesCleanedUp": true
+}

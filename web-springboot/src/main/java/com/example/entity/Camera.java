@@ -2,6 +2,7 @@ package com.example.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 
@@ -11,6 +12,8 @@ import java.time.LocalDateTime;
 @Data
 @TableName("camera")
 public class Camera {
+    @TableField(exist = false)
+    private java.util.Map<String,Object> riskRule;
     /**
      * 设备ID
      */
@@ -35,7 +38,12 @@ public class Camera {
     /**
      * RTSP地址
      */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @lombok.ToString.Exclude
     private String rtspUrl;
+
+    @TableLogic
+    private Integer deleted;
 
     /**
      * 状态(0:离线 1:在线 2:故障)

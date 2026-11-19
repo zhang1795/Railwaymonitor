@@ -36,8 +36,10 @@ web-file/file_store/
 # Local runtime and deployment state
 runtime/
 deploy/.env
+deploy/.env.p0
 
 # Large migrated runtime assets (kept locally, not committed)
+/worker.mp4
 RailwayDetector/*.mp4
 RailwayDetector/*.avi
 RailwayDetector/*.pt

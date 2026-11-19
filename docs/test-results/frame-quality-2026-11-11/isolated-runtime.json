@@ -1,0 +1,80 @@
+{
+  "runMode": "FULL",
+  "databaseOutageRecovered": true,
+  "backendHardKillRecovered": true,
+  "persistentIntentRestored": true,
+  "backendHash": "0290b9870cceaee6df57e391c3f73ef3b49caf1d2c9fad99ff2dc196181d0857",
+  "detectorHash": "31a428849e197766322b2a3a120bf4b6462b027cb49d68deb9d5dd22ef091f4a",
+  "gatewayHash": "fb0fcaff3a30ca415f80917f46acebe3ca9a70148b78b13ecb6d531b505ca070",
+  "sameSessionWithinLease": true,
+  "syntheticSessionAlarms": 1,
+  "realYoloTrackSources": 2,
+  "realYoloCowEvents": 2,
+  "continuous60SecondReminderAfterReadAndResolution": true,
+  "authenticatedScreenshotUpload": true,
+  "detectionContinuesAfterLogout": true,
+  "pendingFinal": 0,
+  "rejectedEvents": 0,
+  "authenticatedRtspSource": true,
+  "gunicornWebsocketGateway": true,
+  "independentSourceRecordingDecoded": true,
+  "authenticatedVideoRange": true,
+  "parallelRealRoutes": [
+    {
+      "camera": 1,
+      "concurrentWindowFps": 0.898,
+      "effectiveFps": 3.072,
+      "processedFrames": 184,
+      "decodedFrames": 1556,
+      "skippedFrames": 1372,
+      "processingP95Ms": 976.058,
+      "inferenceWaitMs": 627.719,
+      "frameAgeMs": 1004.538
+    },
+    {
+      "camera": 2,
+      "concurrentWindowFps": 0.998,
+      "effectiveFps": 0.973,
+      "processedFrames": 13,
+      "decodedFrames": 378,
+      "skippedFrames": 365,
+      "processingP95Ms": 1129.697,
+      "inferenceWaitMs": 663.724,
+      "frameAgeMs": 1031.112
+    },
+    {
+      "camera": 3,
+      "concurrentWindowFps": 0.898,
+      "effectiveFps": 0.969,
+      "processedFrames": 13,
+      "decodedFrames": 369,
+      "skippedFrames": 356,
+      "processingP95Ms": 1140.718,
+      "inferenceWaitMs": 608.924,
+      "frameAgeMs": 999.995
+    }
+  ],
+  "viewers": {
+    "twoAuthenticatedSessions": true,
+    "twoViewersReceiveJpeg": true,
+    "closingOneKeepsOther": true,
+    "stoppingPreviewKeepsDetection": true,
+    "detectionAdvancesWithoutPreview": true,
+    "clientSourceUrlIgnored": true,
+    "logoutStopsPreview": true,
+    "badOriginDenied": true,
+    "unauthenticatedPreviewDenied": true,
+    "frameCounts": {
+      "a": 2,
+      "b": 80
+    },
+    "productionClientReconnect": true,
+    "productionClientRetry": true,
+    "productionClientsIsolated": true,
+    "authenticatedScreenshotRead": true,
+    "anonymousScreenshotDenied": true,
+    "screenshotChecksumVerified": true,
+    "realUnreadReceipts": true,
+    "readingDoesNotResolve": true
+  }
+}

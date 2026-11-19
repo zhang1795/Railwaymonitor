@@ -1,0 +1,7 @@
+{
+  "writeQueueSize": 8192,
+  "seconds": 60,
+  "captureExit": 0,
+  "strictDecodeExit": 0,
+  "decodeErrorBytes": 0
+}

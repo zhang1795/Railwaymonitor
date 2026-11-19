@@ -1,0 +1,10 @@
+{
+  "original": {
+    "deliveredCleanFrames": 373,
+    "damageRejected": false
+  },
+  "knownDamaged": {
+    "deliveredCleanFrames": 71,
+    "damageRejected": true
+  }
+}

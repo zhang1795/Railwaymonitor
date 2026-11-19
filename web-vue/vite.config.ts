@@ -26,8 +26,9 @@ export default defineConfig({
     port: 3000,
     host: '0.0.0.0',
     proxy: {
+      '/stream': { target:'http://127.0.0.1:5000', ws:true, rewrite:(path) => path.replace(/^\/stream/, '') },
       '/api': {
-        target: 'http://localhost:8080',
+        target: process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:8080',
         changeOrigin: true,
       },
       '/algo': {
@@ -53,13 +54,5 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 2000,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'element-plus': ['element-plus'],
-          'vendor': ['vue', 'vue-router', 'pinia'],
-        },
-      },
-    },
   },
 })

@@ -1,0 +1,29 @@
+{
+  "continuous_target": {
+    "input_frames": 300,
+    "published_before_eof": [
+      0
+    ],
+    "published_total": 296,
+    "pending_queue_peak": 300,
+    "pending_queue_maxsize": 0,
+    "error": null,
+    "resources_released": true
+  },
+  "failure_with_pending_results": {
+    "input_frames": 30,
+    "published_before_eof": [],
+    "published_total": 0,
+    "pending_queue_peak": 10,
+    "pending_queue_maxsize": 0,
+    "error": "audit injected inference failure",
+    "resources_released": true
+  },
+  "tracking": {
+    "initial_id": 1,
+    "interfering_class_id": 1,
+    "interfering_class": "kite",
+    "tracks_after_two_misses": 0,
+    "reappeared_id": 2
+  }
+}

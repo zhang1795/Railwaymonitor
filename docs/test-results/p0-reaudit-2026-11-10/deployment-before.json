@@ -1,0 +1,89 @@
+{
+  "http": {
+    "3000": 200,
+    "18080": 200,
+    "5000": 200,
+    "18083": 200
+  },
+  "containers": {
+    "railway-emqx": {
+      "status": "running",
+      "health": "healthy",
+      "startedAt": "2026-11-10T06:39:21.08399284Z",
+      "ports": {
+        "18083/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "18083"
+          }
+        ],
+        "1883/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "1883"
+          }
+        ],
+        "8883/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "8883"
+          }
+        ]
+      }
+    },
+    "railway-mediamtx": {
+      "status": "running",
+      "health": null,
+      "startedAt": "2026-11-10T06:39:21.84139414Z",
+      "ports": {
+        "8189/udp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "8189"
+          }
+        ],
+        "8554/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "8554"
+          }
+        ],
+        "8888/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "8888"
+          }
+        ],
+        "8889/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "8889"
+          }
+        ]
+      }
+    }
+  },
+  "processes": {
+    "backend": {
+      "pid": "3388613",
+      "alive": true
+    },
+    "frontend": {
+      "pid": "3388637",
+      "alive": true
+    },
+    "flask": {
+      "pid": "3388623",
+      "alive": true
+    },
+    "detector": {
+      "pid": "3388673",
+      "alive": true
+    },
+    "demo_stream": {
+      "pid": "3401732",
+      "alive": true
+    }
+  },
+  "mysqlHealthy": true
+}

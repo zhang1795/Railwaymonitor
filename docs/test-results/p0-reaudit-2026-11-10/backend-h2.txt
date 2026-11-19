@@ -1,0 +1,4 @@
+[WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.007 s -- in com.example.P0MqttIntegrationTest
+[INFO] Tests run: 50, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 22.71 s -- in com.example.P0IntegrationTest
+[WARNING] Tests run: 51, Failures: 0, Errors: 0, Skipped: 1
+[INFO] BUILD SUCCESS

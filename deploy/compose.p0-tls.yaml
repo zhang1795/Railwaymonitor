@@ -1,0 +1,7 @@
+services:
+  emqx:
+    volumes:
+      - ../workspace/runtime/emqx-p0/base.conf:/opt/emqx/etc/railway-base.conf:ro
+      - ./emqx/emqx-tls.conf:/opt/emqx/etc/emqx.conf:ro
+      - ${MQTT_SERVER_CERT:?supply server certificate}:/opt/emqx/etc/railway-server.crt:ro
+      - ${MQTT_SERVER_KEY:?supply server key}:/opt/emqx/etc/railway-server.key:ro

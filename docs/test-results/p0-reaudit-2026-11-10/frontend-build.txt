@@ -1,0 +1,12 @@
+dist/assets/AbnormalEvent-DzPK7JiR.js                  5.07 kB │ gzip:   1.91 kB
+dist/assets/DeviceStatus-DdUv4u00.js                   5.41 kB │ gzip:   1.91 kB
+dist/assets/Overview-DLdSvn_s.js                       6.06 kB │ gzip:   2.23 kB
+dist/assets/index-DKqIVdqK.js                          7.01 kB │ gzip:   2.81 kB
+dist/assets/index-B1xwJqy7.js                          8.06 kB │ gzip:   2.73 kB
+dist/assets/index-DUmKE_oX.js                         11.58 kB │ gzip:   4.70 kB
+dist/assets/index-DWOfVtBi.js                         12.20 kB │ gzip:   4.09 kB
+dist/assets/index-CZfsBqme.js                         12.80 kB │ gzip:   4.98 kB
+dist/assets/index-DLcSVKnY.js                         15.16 kB │ gzip:   4.73 kB
+dist/assets/statistics-D4AYsLor.js                 1,036.52 kB │ gzip: 343.51 kB
+dist/assets/index-C58AFayD.js                      1,179.36 kB │ gzip: 381.27 kB
+✓ built in 14.36s

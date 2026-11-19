@@ -2,6 +2,7 @@ package com.example.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
 
@@ -25,7 +26,12 @@ public class User {
     /**
      * 密码
      */
+    @JsonIgnore
+    @lombok.ToString.Exclude
     private String password;
+    @JsonIgnore
+    private Long securityVersion;
+    private Boolean passwordChangeRequired;
 
     /**
      * 真实姓名

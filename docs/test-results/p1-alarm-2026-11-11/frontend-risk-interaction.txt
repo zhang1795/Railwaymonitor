@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: a persistent reminder has a new notification identity on the same alarm
+ok 1 - a persistent reminder has a new notification identity on the same alarm
+  ---
+  duration_ms: 89.591226
+  type: 'test'
+  ...
+# Subtest: detail acknowledgement uses the exact displayed notification IDs
+ok 2 - detail acknowledgement uses the exact displayed notification IDs
+  ---
+  duration_ms: 146.730278
+  type: 'test'
+  ...
+# Subtest: stale risk observations are shown unknown while preserving the last recorded state
+ok 3 - stale risk observations are shown unknown while preserving the last recorded state
+  ---
+  duration_ms: 9.76866
+  type: 'test'
+  ...
+# Subtest: risk-rule form keeps malformed regions local and submits valid revision-fenced rules
+ok 4 - risk-rule form keeps malformed regions local and submits valid revision-fenced rules
+  ---
+  duration_ms: 9.952333
+  type: 'test'
+  ...
+# Subtest: a late rule response cannot populate a closed dialog
+ok 5 - a late rule response cannot populate a closed dialog
+  ---
+  duration_ms: 9.659297
+  type: 'test'
+  ...
+# Subtest: rule saves freeze the submitted value, suppress duplicates and ignore success after unmount
+ok 6 - rule saves freeze the submitted value, suppress duplicates and ignore success after unmount
+  ---
+  duration_ms: 18.645647
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 316.400984

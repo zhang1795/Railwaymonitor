@@ -63,5 +63,5 @@ export const deleteUser = (id: number) => {
 
 // 重置密码
 export const resetPassword = (id: number) => {
-  return request.put<void>(`/user/${id}/reset-password`)
+  return request.put<{temporaryPassword:string}>(`/user/${id}/reset-password`)
 } 

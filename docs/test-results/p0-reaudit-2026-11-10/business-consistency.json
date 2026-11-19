@@ -1,0 +1,6 @@
+{
+  "readOnly": true,
+  "automaticAlarmsChecked": 100,
+  "mismatchedAutomaticRows": [],
+  "historicalSourceNullRowsNotInferred": true
+}
